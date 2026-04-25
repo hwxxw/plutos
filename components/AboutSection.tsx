@@ -348,7 +348,7 @@ const T = {
 /* ══ 메인 내보내기 ══════════════════════════ */
 export function AboutSection() {
   const { lang } = useLang();
-  const t = T[lang];
+  const t = T[lang as keyof typeof T] ?? T.en;
 
   return (
     <section id="about" className="mt-24">
