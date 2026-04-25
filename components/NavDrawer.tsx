@@ -5,15 +5,17 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useLang } from './LanguageProvider';
+import { useLang, LANGUAGES } from './LanguageProvider';
 
 const spring = { type: 'spring' as const, stiffness: 320, damping: 32 };
 
 export function NavDrawer() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const { lang, setLang } = useLang();
   const pathname = usePathname();
+  const currentLang = LANGUAGES.find(l => l.code === lang);
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -22,19 +24,23 @@ export function NavDrawer() {
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
+  const UI = {
+    ko: { about: '소개', tools: '개발 도구', settings: '설정', terms: '이용약관', privacy: '개인정보처리방침', language: '언어' },
+    en: { about: 'About', tools: 'Dev Tools', settings: 'Settings', terms: 'Terms', privacy: 'Privacy', language: 'Language' },
+    ja: { about: '概要', tools: '開発ツール', settings: '設定', terms: '利用規約', privacy: 'プライバシー', language: '言語' },
+    zh: { about: '介绍', tools: '开发工具', settings: '设置', terms: '使用条款', privacy: '隐私政策', language: '语言' },
+    es: { about: 'Acerca de', tools: 'Herramientas', settings: 'Ajustes', terms: 'Términos', privacy: 'Privacidad', language: 'Idioma' },
+    fr: { about: 'À propos', tools: 'Outils Dev', settings: 'Paramètres', terms: 'CGU', privacy: 'Confidentialité', language: 'Langue' },
+    de: { about: 'Über uns', tools: 'Dev Tools', settings: 'Einstellungen', terms: 'Nutzungsbedingungen', privacy: 'Datenschutz', language: 'Sprache' },
+  };
+  const t = UI[lang];
+
   const items = [
-    {
-      id: 'lang', icon: <IconGlobe />,
-      label: lang === 'en' ? 'Language' : '언어',
-      desc: lang === 'ko' ? 'Korean → English' : 'English → Korean',
-      badge: lang.toUpperCase(),
-      action: () => setLang(lang === 'ko' ? 'en' : 'ko'),
-    },
-    { id: 'about',    icon: <IconInfo />,     label: lang === 'en' ? 'About' : '소개',           href: '/#about' },
-    { id: 'tools',    icon: <IconTool />,     label: lang === 'en' ? 'Dev Tools' : '개발 도구',   href: '/tools' },
-    { id: 'settings', icon: <IconSettings />, label: lang === 'en' ? 'Settings' : '설정 개요',    href: '/settings' },
-    { id: 'terms',    icon: <IconScale />,    label: lang === 'en' ? 'Terms' : '이용약관',        href: '/legal/terms' },
-    { id: 'privacy',  icon: <IconScale />,    label: lang === 'en' ? 'Privacy' : '개인정보처리방침', href: '/legal/privacy' },
+    { id: 'about',    icon: <IconInfo />,     label: t.about,    href: '/#about' },
+    { id: 'tools',    icon: <IconTool />,     label: t.tools,    href: '/tools' },
+    { id: 'settings', icon: <IconSettings />, label: t.settings, href: '/settings' },
+    { id: 'terms',    icon: <IconScale />,    label: t.terms,    href: '/legal/terms' },
+    { id: 'privacy',  icon: <IconScale />,    label: t.privacy,  href: '/legal/privacy' },
   ];
 
   const drawer = (
@@ -94,6 +100,60 @@ export function NavDrawer() {
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </motion.button>
+            </div>
+
+            {/* 언어 선택 */}
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid #1e1218' }}>
+              <button
+                onClick={() => setLangOpen(v => !v)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: '#160d12', border: '1px solid #2a1515', cursor: 'pointer' }}
+              >
+                <IconGlobe />
+                <span style={{ flex: 1, textAlign: 'left', fontSize: 13, color: '#cccccc', fontFamily: "'IBM Plex Sans KR', sans-serif" }}>
+                  {t.language}
+                </span>
+                <span style={{ fontSize: 18 }}>{currentLang?.flag}</span>
+                <span style={{ fontSize: 11, color: '#cc1a1a', fontFamily: 'Cinzel, serif', fontWeight: 700 }}>{lang.toUpperCase()}</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#554444" strokeWidth={2} style={{ width: 14, height: 14, transform: langOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              <AnimatePresence>
+                {langOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div style={{ paddingTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                      {LANGUAGES.map(l => (
+                        <button
+                          key={l.code}
+                          onClick={() => { setLang(l.code); setLangOpen(false); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
+                            backgroundColor: lang === l.code ? '#2a0808' : '#0d0a10',
+                            border: `1px solid ${lang === l.code ? '#660000' : '#1a1015'}`,
+                            color: lang === l.code ? '#e8e8e8' : '#664444',
+                          }}
+                        >
+                          <span style={{ fontSize: 18 }}>{l.flag}</span>
+                          <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: lang === l.code ? '#e8e8e8' : '#888888' }}>{l.native}</div>
+                          </div>
+                          {lang === l.code && (
+                            <span style={{ marginLeft: 'auto', fontSize: 10, color: '#cc1a1a' }}>✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* 메뉴 */}
