@@ -47,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </nav>
             </div>
             <p className="text-center text-[10px] mt-6" style={{ color: '#2a2020' }}>
-              © 2026 PLUTOS. All rights reserved. · 사업자 등록 및 통신판매업 신고 정보는 서비스 오픈 시 공개됩니다.
+              © 2026 PLUTOS. All rights reserved.
             </p>
           </div>
         </footer>
