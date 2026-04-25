@@ -4,6 +4,7 @@ import { ScrollFadeIn } from '@/components/ScrollFadeIn';
 import { AboutSection } from '@/components/AboutSection';
 import { HeroText } from '@/components/HeroText';
 import { DevAdBanner } from '@/components/DevAdBanner';
+import { ProBanner } from '@/components/ProBanner';
 import type { PublicApp } from '@/lib/supabase/types';
 
 export const revalidate = 60;
@@ -46,6 +47,9 @@ export default async function HomePage() {
 
       {/* 광고 배너 — 소개 섹션 위 */}
       <DevAdBanner apps={(adApps || []) as any[]} />
+
+      {/* PRO 업그레이드 배너 */}
+      <ProBanner />
 
       {/* 소개 섹션 — 스크롤하면 바로 보임 */}
       <AboutSection />
