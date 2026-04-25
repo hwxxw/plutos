@@ -158,7 +158,10 @@ async function handleNewPurchase(
   supabase: ReturnType<typeof createServiceClient>
 ) {
   const m = session.metadata!;
-  const { app_id, user_id, developer_id, tier, tier_id, max_seats, marketing_consent } = m;
+  const {
+    app_id, user_id, developer_id, tier, tier_id, max_seats,
+    marketing_consent, points_used, original_price_krw,
+  } = m;
 
   if (!app_id || !user_id || !developer_id || !tier || !tier_id) {
     console.error('[webhook] missing metadata:', session.id);
@@ -166,6 +169,7 @@ async function handleNewPurchase(
   }
 
   const amountKrw = session.amount_total || 0;
+  const pointsUsed = parseInt(points_used || '0', 10);
 
   const { data: developer } = await supabase
     .from('users').select('is_pro').eq('id', developer_id).maybeSingle();
@@ -176,7 +180,7 @@ async function handleNewPurchase(
 
   const consentGiven = marketing_consent === 'true';
 
-  const { error } = await supabase.from('licenses').insert({
+  const { data: newLicense, error } = await supabase.from('licenses').insert({
     user_id,
     app_id,
     tier,
@@ -192,11 +196,83 @@ async function handleNewPurchase(
     marketing_consent: consentGiven,
     marketing_consent_at: consentGiven ? new Date().toISOString() : null,
     status: 'active',
-  });
+  }).select('id').single();
 
   if (error) {
     console.error('[webhook] license insert failed:', error);
     throw error;
+  }
+
+  // 포인트 차감 (사용한 경우)
+  if (pointsUsed > 0) {
+    await supabase.rpc('add_points', {
+      p_user_id: user_id,
+      p_amount: -pointsUsed,
+      p_type: 'checkout_use',
+      p_description: `${app_id} 구매 포인트 사용`,
+      p_reference_id: newLicense?.id || null,
+    });
+  }
+
+  // 구매 포인트 적립 (결제금액의 1%)
+  const earnPoints = Math.floor(amountKrw * 0.01);
+  if (earnPoints > 0) {
+    await supabase.rpc('add_points', {
+      p_user_id: user_id,
+      p_amount: earnPoints,
+      p_type: 'purchase_earn',
+      p_description: `구매 적립 (1%)`,
+      p_reference_id: newLicense?.id || null,
+    });
+  }
+
+  // total_spent_krw 업데이트 + 멤버십 등급 재계산
+  const actualSpent = parseInt(original_price_krw || String(amountKrw), 10);
+  await supabase.rpc('update_membership_tier_after_purchase', {
+    p_user_id: user_id,
+    p_amount: actualSpent,
+  }).catch((e) => {
+    console.error('[webhook] membership tier update failed:', e);
+  });
+
+  // referred_by가 있으면 추천 완료 처리
+  const { data: userProfile } = await supabase
+    .from('users').select('referred_by').eq('id', user_id).maybeSingle();
+
+  if (userProfile?.referred_by) {
+    const { data: pendingReferral } = await supabase
+      .from('referrals')
+      .select('id, points_awarded')
+      .eq('referrer_id', userProfile.referred_by)
+      .eq('referred_id', user_id)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (pendingReferral) {
+      await supabase.from('referrals').update({
+        status: 'completed',
+        points_awarded: 2000,
+        completed_at: new Date().toISOString(),
+      }).eq('id', pendingReferral.id);
+
+      // 추천인 포인트 지급
+      await supabase.rpc('add_points', {
+        p_user_id: userProfile.referred_by,
+        p_amount: 2000,
+        p_type: 'referral_earn',
+        p_description: '추천인 보상',
+        p_reference_id: pendingReferral.id,
+      });
+
+      // 피추천인 보상
+      await supabase.rpc('add_points', {
+        p_user_id: user_id,
+        p_amount: 1000,
+        p_type: 'referral_bonus',
+        p_description: '첫 구매 추천 보너스',
+        p_reference_id: pendingReferral.id,
+      });
+    }
   }
 
   // 마케팅 동의 업데이트 + 이벤트 로그 병렬 처리
@@ -208,7 +284,7 @@ async function handleNewPurchase(
       actor_id: user_id,
       event_type: 'license_purchased',
       entity_type: 'license',
-      metadata: { app_id, tier, amount: amountKrw },
+      metadata: { app_id, tier, amount: amountKrw, points_used: pointsUsed },
     }),
   ]);
 }

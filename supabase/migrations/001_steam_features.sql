@@ -1,0 +1,138 @@
+-- ============================================================
+-- PLUTOS Steam-like Lock-in Features
+-- Supabase SQL Editor에 붙여넣고 실행하세요
+-- ============================================================
+
+-- 1. licenses 테이블 확장 (환불 추적)
+ALTER TABLE licenses
+  ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS total_usage_seconds INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS refund_requested_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS refund_reason TEXT;
+
+-- 2. users 테이블 확장
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS referral_code TEXT UNIQUE,
+  ADD COLUMN IF NOT EXISTS referred_by UUID REFERENCES users(id),
+  ADD COLUMN IF NOT EXISTS membership_tier TEXT DEFAULT 'bronze',
+  ADD COLUMN IF NOT EXISTS total_spent_krw INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS point_balance INTEGER DEFAULT 0;
+
+-- 3. referrals 테이블
+CREATE TABLE IF NOT EXISTS referrals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT NOT NULL,
+  referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  referred_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  status TEXT DEFAULT 'pending',   -- pending / completed
+  points_awarded INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  completed_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_referrals_code ON referrals(code);
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
+
+-- 4. user_points 테이블 (거래 내역)
+CREATE TABLE IF NOT EXISTS user_points (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  amount INTEGER NOT NULL,
+  type TEXT NOT NULL,   -- referral_earn / referral_bonus / purchase_earn / checkout_use / admin
+  description TEXT,
+  reference_id UUID,
+  balance_after INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_user_points_user_id ON user_points(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_points_created ON user_points(created_at DESC);
+
+-- 5. wishlists 테이블 (Phase 2 준비)
+CREATE TABLE IF NOT EXISTS wishlists (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  app_id UUID NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, app_id)
+);
+
+-- 6. 멤버십 등급 자동 계산 함수
+CREATE OR REPLACE FUNCTION update_membership_tier(p_user_id UUID)
+RETURNS void LANGUAGE plpgsql AS $$
+DECLARE v_spent INTEGER; v_tier TEXT;
+BEGIN
+  SELECT COALESCE(total_spent_krw, 0) INTO v_spent FROM users WHERE id = p_user_id;
+  IF v_spent >= 500000 THEN v_tier := 'platinum';
+  ELSIF v_spent >= 200000 THEN v_tier := 'gold';
+  ELSIF v_spent >= 50000  THEN v_tier := 'silver';
+  ELSE v_tier := 'bronze';
+  END IF;
+  UPDATE users SET membership_tier = v_tier WHERE id = p_user_id;
+END;
+$$;
+
+-- 7. 포인트 적립/차감 함수
+CREATE OR REPLACE FUNCTION add_points(
+  p_user_id UUID, p_amount INTEGER, p_type TEXT,
+  p_description TEXT DEFAULT NULL, p_reference_id UUID DEFAULT NULL
+)
+RETURNS INTEGER LANGUAGE plpgsql AS $$
+DECLARE v_balance INTEGER;
+BEGIN
+  UPDATE users SET point_balance = GREATEST(0, point_balance + p_amount)
+  WHERE id = p_user_id RETURNING point_balance INTO v_balance;
+  INSERT INTO user_points(user_id, amount, type, description, reference_id, balance_after)
+  VALUES (p_user_id, p_amount, p_type, p_description, p_reference_id, v_balance);
+  RETURN v_balance;
+END;
+$$;
+
+-- 8. 추천 코드 자동 생성 트리거
+CREATE OR REPLACE FUNCTION generate_referral_code()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.referral_code IS NULL THEN
+    NEW.referral_code := 'PLT-' || UPPER(SUBSTRING(MD5(NEW.id::TEXT || NOW()::TEXT), 1, 6));
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_generate_referral_code ON users;
+CREATE TRIGGER trg_generate_referral_code
+  BEFORE INSERT ON users
+  FOR EACH ROW EXECUTE FUNCTION generate_referral_code();
+
+-- 기존 유저 추천 코드 생성
+UPDATE users SET
+  referral_code = 'PLT-' || UPPER(SUBSTRING(MD5(id::TEXT), 1, 6))
+WHERE referral_code IS NULL;
+
+-- 9. RLS 정책
+ALTER TABLE referrals   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_points ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wishlists   ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY IF NOT EXISTS "referrals_own"
+  ON referrals FOR SELECT
+  USING (referrer_id = auth.uid() OR referred_id = auth.uid());
+
+CREATE POLICY IF NOT EXISTS "user_points_own"
+  ON user_points FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY IF NOT EXISTS "wishlists_own"
+  ON wishlists FOR ALL USING (user_id = auth.uid());
+
+-- 10. 구매 후 total_spent_krw 업데이트 + 멤버십 자동 재계산
+CREATE OR REPLACE FUNCTION update_membership_tier_after_purchase(
+  p_user_id UUID, p_amount INTEGER
+)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE users SET total_spent_krw = COALESCE(total_spent_krw, 0) + p_amount WHERE id = p_user_id;
+  PERFORM update_membership_tier(p_user_id);
+END;
+$$;
+
+-- ============================================================
+-- 완료. 이제 Vercel에서 API/UI를 배포하세요.
+-- ============================================================

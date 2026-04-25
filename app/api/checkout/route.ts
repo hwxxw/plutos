@@ -3,12 +3,20 @@ import { createClient } from '@/lib/supabase/server';
 import { stripe } from '@/lib/stripe';
 import type { TierName } from '@/lib/supabase/types';
 
+const TIER_DISCOUNT: Record<string, number> = {
+  bronze:   0,
+  silver:   0.03,
+  gold:     0.05,
+  platinum: 0.10,
+};
+
 export async function POST(request: Request) {
   try {
-    const { appId, tier, marketingConsent } = await request.json() as {
+    const { appId, tier, marketingConsent, usePoints } = await request.json() as {
       appId: string;
       tier: TierName;
       marketingConsent?: boolean;
+      usePoints?: number;
     };
 
     if (!appId || !tier) {
@@ -23,16 +31,15 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-    // 앱 정보 + 티어 정보 병렬 조회
-    const [{ data: app }, { data: appTier }] = await Promise.all([
+    const [{ data: app }, { data: appTier }, { data: profile }] = await Promise.all([
       supabase.from('apps_public').select('*').eq('id', appId).maybeSingle(),
       supabase.from('app_tiers').select('*').eq('app_id', appId).eq('tier', tier).eq('is_active', true).maybeSingle(),
+      supabase.from('users').select('point_balance, membership_tier').eq('id', user.id).maybeSingle(),
     ]);
 
     if (!app) return NextResponse.json({ error: 'app_not_found' }, { status: 404 });
     if (!appTier) return NextResponse.json({ error: 'tier_not_available' }, { status: 404 });
 
-    // 중복 구매 방지
     const { data: existing } = await supabase
       .from('licenses')
       .select('id, tier')
@@ -42,10 +49,23 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (existing) {
-      return NextResponse.json(
-        { error: 'already_purchased', tier: existing.tier },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'already_purchased', tier: existing.tier }, { status: 409 });
+    }
+
+    // Tier discount
+    const membershipTier = profile?.membership_tier || 'bronze';
+    const discountRate = TIER_DISCOUNT[membershipTier] ?? 0;
+    const basePrice = appTier.price_krw;
+    const afterDiscount = Math.round(basePrice * (1 - discountRate));
+
+    // Points redemption: 1 point = 1 KRW, max 20% of price
+    const pointBalance = profile?.point_balance || 0;
+    const maxPointsUsable = Math.floor(afterDiscount * 0.2);
+    const pointsToUse = Math.min(usePoints || 0, pointBalance, maxPointsUsable);
+    const finalPrice = Math.max(0, afterDiscount - pointsToUse);
+
+    if (finalPrice < 100) {
+      return NextResponse.json({ error: 'price_too_low' }, { status: 400 });
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
@@ -60,11 +80,15 @@ export async function POST(request: Request) {
             currency: 'krw',
             product_data: {
               name: `${app.name} — ${tierLabel}`,
-              description: app.tagline || undefined,
+              description: [
+                app.tagline,
+                discountRate > 0 ? `멤버십 ${Math.round(discountRate * 100)}% 할인 적용` : null,
+                pointsToUse > 0 ? `포인트 ${pointsToUse.toLocaleString()}P 사용` : null,
+              ].filter(Boolean).join(' · ') || undefined,
               images: app.icon_url ? [app.icon_url] : undefined,
               metadata: { app_id: app.id, tier, tier_id: appTier.id },
             },
-            unit_amount: appTier.price_krw,
+            unit_amount: finalPrice,
           },
           quantity: 1,
         },
@@ -78,13 +102,22 @@ export async function POST(request: Request) {
         tier_id: appTier.id,
         max_seats: String(appTier.max_seats),
         marketing_consent: String(!!marketingConsent),
+        points_used: String(pointsToUse),
+        original_price_krw: String(basePrice),
+        membership_tier: membershipTier,
       },
       success_url: `${siteUrl}/install/${app.id}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/apps/${app.slug}`,
       locale: 'ko',
     });
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({
+      url: session.url,
+      finalPrice,
+      discountRate,
+      pointsToUse,
+      membershipTier,
+    });
   } catch (err) {
     console.error('[checkout] error:', err);
     return NextResponse.json(
