@@ -36,8 +36,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const currentOrigin = self.location.origin;
 
-  // 허용되지 않은 도메인이면 즉시 차단
-  if (!ALLOWED_ORIGINS.includes(currentOrigin)) {
+  // 허용되지 않은 도메인이면 즉시 차단 (vercel.app 전체 허용)
+  const isAllowed = ALLOWED_ORIGINS.includes(currentOrigin) || currentOrigin.endsWith('.vercel.app');
+  if (!isAllowed) {
     event.respondWith(
       new Response(
         `<!DOCTYPE html><html><body style="font-family:monospace;background:#0d0d14;color:#cc1a1a;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column">
