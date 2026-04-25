@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: #0d0d14;
+    color: #e8e8e8;
+    font-family: 'Space Grotesk', 'IBM Plex Sans KR', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 15px;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(74, 4, 4, 0.35) 0%, transparent 70%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+  }
+  h1, h2, h3 {
+    font-family: 'Cinzel', 'Space Grotesk', serif;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold relative overflow-hidden;
+    transition: box-shadow 150ms ease, background-color 150ms ease;
+  }
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+  .btn:hover::after {
+    animation: shimmer 0.45s ease forwards;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-500 disabled:opacity-50;
+  }
+  .btn-primary:hover {
+    box-shadow: 0 0 28px rgba(153,20,20,0.5), 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .btn-secondary {
+    @apply btn text-[#f0ece4] hover:bg-[#1e1218] border border-[#2a1515];
+    background-color: #160d12;
+  }
+  .btn-secondary:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    border-color: #4A0404;
+  }
+  .card {
+    background-color: #120a0e;
+    border: 1px solid #2a1515;
+    @apply rounded-xl p-4;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .card-hover:hover {
+    border-color: #660000;
+    box-shadow: 0 8px 32px rgba(74,4,4,0.3);
+  }
+  .fade-up {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .gold-text {
+    color: #C9A84C;
+  }
+  .crimson-bg {
+    background: linear-gradient(135deg, #1a0404 0%, #0d0d14 100%);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+.animate-marquee {
+  animation: marquee 38s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
