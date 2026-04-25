@@ -70,14 +70,14 @@ const ICONS: Record<string, React.ReactNode> = {
 };
 
 const CATEGORIES = [
-  { key: 'writing',    label: '글쓰기',   en: 'Writing' },
-  { key: 'data',       label: '데이터',   en: 'Data' },
-  { key: 'automation', label: '자동화',   en: 'Automation' },
-  { key: 'design',     label: '디자인',   en: 'Design' },
-  { key: 'learning',   label: '학습',     en: 'Learning' },
-  { key: 'business',   label: '비즈니스', en: 'Business' },
-  { key: 'marketing',  label: '마케팅',   en: 'Marketing' },
-  { key: 'dev',        label: '개발',     en: 'Dev' },
+  { key: 'writing',    ko: '글쓰기',   en: 'Writing',    ja: '執筆',       zh: '写作',    es: 'Escritura',  fr: 'Écriture',   de: 'Schreiben' },
+  { key: 'data',       ko: '데이터',   en: 'Data',       ja: 'データ',      zh: '数据',    es: 'Datos',      fr: 'Données',    de: 'Daten' },
+  { key: 'automation', ko: '자동화',   en: 'Automation', ja: '自動化',      zh: '自动化',  es: 'Automatización', fr: 'Automatisation', de: 'Automatisierung' },
+  { key: 'design',     ko: '디자인',   en: 'Design',     ja: 'デザイン',    zh: '设计',    es: 'Diseño',     fr: 'Design',     de: 'Design' },
+  { key: 'learning',   ko: '학습',     en: 'Learning',   ja: '学習',        zh: '学习',    es: 'Aprendizaje', fr: 'Apprentissage', de: 'Lernen' },
+  { key: 'business',   ko: '비즈니스', en: 'Business',   ja: 'ビジネス',    zh: '商业',    es: 'Negocios',   fr: 'Affaires',   de: 'Geschäft' },
+  { key: 'marketing',  ko: '마케팅',   en: 'Marketing',  ja: 'マーケティング', zh: '营销',  es: 'Marketing',  fr: 'Marketing',  de: 'Marketing' },
+  { key: 'dev',        ko: '개발',     en: 'Dev',        ja: '開発',        zh: '开发',    es: 'Desarrollo', fr: 'Dev',        de: 'Entwicklung' },
 ];
 
 const spring = { type: 'spring' as const, stiffness: 420, damping: 22 };
@@ -309,7 +309,7 @@ export function HomepageClient({ apps }: Props) {
                     letterSpacing: '0.01em',
                   }}
                 >
-                  {lang === 'en' ? c.en : c.label}
+                  {(c as any)[lang] ?? c.en}
                 </motion.span>
 
                 {/* count */}
@@ -357,7 +357,7 @@ export function HomepageClient({ apps }: Props) {
                 {searchResults !== null
                   ? t.resultLabel(searchResults.length)
                   : selectedCatInfo
-                    ? t.catLabel(selectedCatInfo.en, displayedApps.length)
+                    ? t.catLabel((selectedCatInfo as any)[lang] ?? selectedCatInfo.en, displayedApps.length)
                     : t.allLabel(apps.length)}
               </span>
             </motion.div>
