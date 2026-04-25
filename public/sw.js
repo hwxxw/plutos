@@ -6,6 +6,8 @@
 const ALLOWED_ORIGINS = [
   'https://plutos.app',
   'https://www.plutos.app',
+  'https://plutos-six.vercel.app',
+  'https://plutos-six-hwxxws-projects.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001',
 ];
