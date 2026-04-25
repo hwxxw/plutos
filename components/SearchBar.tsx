@@ -3,6 +3,17 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PublicApp } from '@/lib/supabase/types';
+import { useLang } from './LanguageProvider';
+
+const PLACEHOLDER: Record<string, string> = {
+  ko: '앱 검색 — "이메일 자동화", "데이터 분석" 등 자유롭게',
+  en: 'Search apps — "email automation", "data analysis" and more',
+  ja: 'アプリ検索 — "メール自動化"、"データ分析" など自由に',
+  zh: '搜索应用 — "邮件自动化"、"数据分析" 等',
+  es: 'Buscar apps — "automatización de email", "análisis de datos"...',
+  fr: 'Rechercher des apps — "automatisation email", "analyse données"...',
+  de: 'Apps suchen — "E-Mail-Automatisierung", "Datenanalyse" u.v.m.',
+};
 
 type Props = {
   onResults: (results: PublicApp[] | null) => void;
@@ -11,6 +22,7 @@ type Props = {
 };
 
 export function SearchBar({ onResults, onSearching, onClear }: Props) {
+  const { lang } = useLang();
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const [pending, setPending] = useState(false);
@@ -74,7 +86,7 @@ export function SearchBar({ onResults, onSearching, onClear }: Props) {
           onChange={handleChange}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder='앱 검색 — "이메일 자동화", "데이터 분석" 등 자유롭게'
+          placeholder={PLACEHOLDER[lang] ?? PLACEHOLDER.en}
           className="flex-1 bg-transparent text-sm outline-none"
           style={{
             color: '#f0ece4',
