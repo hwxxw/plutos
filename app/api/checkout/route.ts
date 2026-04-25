@@ -23,26 +23,14 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-    // 앱 정보
-    const { data: app } = await supabase
-      .from('apps_public')
-      .select('*')
-      .eq('id', appId)
-      .maybeSingle();
+    // 앱 정보 + 티어 정보 병렬 조회
+    const [{ data: app }, { data: appTier }] = await Promise.all([
+      supabase.from('apps_public').select('*').eq('id', appId).maybeSingle(),
+      supabase.from('app_tiers').select('*').eq('app_id', appId).eq('tier', tier).eq('is_active', true).maybeSingle(),
+    ]);
+
     if (!app) return NextResponse.json({ error: 'app_not_found' }, { status: 404 });
-
-    // 선택 티어 정보
-    const { data: appTier } = await supabase
-      .from('app_tiers')
-      .select('*')
-      .eq('app_id', appId)
-      .eq('tier', tier)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (!appTier) {
-      return NextResponse.json({ error: 'tier_not_available' }, { status: 404 });
-    }
+    if (!appTier) return NextResponse.json({ error: 'tier_not_available' }, { status: 404 });
 
     // 중복 구매 방지
     const { data: existing } = await supabase

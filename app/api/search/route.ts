@@ -4,6 +4,33 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const VALID_CATEGORIES = ['writing', 'data', 'automation', 'design', 'learning', 'business', 'marketing', 'dev'];
 
+// 모듈 레벨 싱글톤 — cold start 1회만 초기화
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
+
+// 검색어 파싱 결과 인메모리 캐시 (같은 쿼리 → Claude 재호출 방지)
+type CachedParse = { keywords: string; category: string | null; expires: number };
+const parseCache = new Map<string, CachedParse>();
+const CACHE_TTL = 5 * 60 * 1000; // 5분
+const CACHE_MAX = 300;
+
+function getCached(q: string): CachedParse | null {
+  const hit = parseCache.get(q);
+  if (!hit) return null;
+  if (hit.expires < Date.now()) { parseCache.delete(q); return null; }
+  return hit;
+}
+
+function setCache(q: string, value: Omit<CachedParse, 'expires'>) {
+  if (parseCache.size >= CACHE_MAX) {
+    // 가장 오래된 항목 제거
+    const first = parseCache.keys().next().value;
+    if (first) parseCache.delete(first);
+  }
+  parseCache.set(q, { ...value, expires: Date.now() + CACHE_TTL });
+}
+
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim() || '';
   if (!q) return NextResponse.json({ apps: [] });
@@ -13,35 +40,31 @@ export async function GET(req: NextRequest) {
   let keywords = q;
   let category: string | null = null;
 
-  if (process.env.ANTHROPIC_API_KEY) {
+  // 캐시 히트 → Claude 스킵
+  const cached = getCached(q);
+  if (cached) {
+    keywords = cached.keywords;
+    category = cached.category;
+  } else if (anthropic) {
     try {
-      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
       const msg = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 200,
-        messages: [
-          {
-            role: 'user',
-            content: `앱 마켓 검색 분석. 사용자 검색어: "${q}"
-
-카테고리 목록: writing(글쓰기), data(데이터/분석), automation(자동화), design(디자인), learning(학습), business(비즈니스), marketing(마케팅), dev(개발)
-
-JSON만 응답:
-{"keywords": "검색에 쓸 핵심 키워드들 (공백 구분, 영어 포함)", "category": "가장 관련된 카테고리 키 또는 null"}`,
-          },
-        ],
+        max_tokens: 120,
+        messages: [{
+          role: 'user',
+          content: `앱 마켓 검색 분석. 검색어: "${q}"\n카테고리: writing, data, automation, design, learning, business, marketing, dev\nJSON만: {"keywords":"핵심 키워드 영어포함","category":"카테고리키 또는 null"}`,
+        }],
       });
       const text = msg.content[0].type === 'text' ? msg.content[0].text : '';
       const match = text.match(/\{[\s\S]*?\}/);
       if (match) {
         const parsed = JSON.parse(match[0]);
         if (parsed.keywords?.trim()) keywords = parsed.keywords.trim();
-        if (parsed.category && VALID_CATEGORIES.includes(parsed.category)) {
-          category = parsed.category;
-        }
+        if (parsed.category && VALID_CATEGORIES.includes(parsed.category)) category = parsed.category;
       }
+      setCache(q, { keywords, category });
     } catch {
-      // fallback to raw query
+      // fallback: 원본 쿼리 사용
     }
   }
 
@@ -52,12 +75,7 @@ JSON만 응답:
     `description.ilike.%${kw}%`,
   ]).join(',');
 
-  let query = supabase
-    .from('apps_public')
-    .select('*')
-    .or(orClauses)
-    .limit(24);
-
+  let query = supabase.from('apps_public').select('*').or(orClauses).limit(24);
   if (category) query = query.eq('category', category);
 
   const { data: apps } = await query;

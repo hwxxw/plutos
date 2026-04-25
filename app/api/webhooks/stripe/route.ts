@@ -199,21 +199,18 @@ async function handleNewPurchase(
     throw error;
   }
 
-  // 구매 시 마케팅 동의 = 글로벌 allow_dev_marketing도 활성화
-  // (developer_customers 뷰가 두 값 모두 TRUE를 요구하므로)
-  if (consentGiven) {
-    await supabase
-      .from('users')
-      .update({ allow_dev_marketing: true })
-      .eq('id', user_id);
-  }
-
-  await supabase.from('platform_events').insert({
-    actor_id: user_id,
-    event_type: 'license_purchased',
-    entity_type: 'license',
-    metadata: { app_id, tier, amount: amountKrw },
-  });
+  // 마케팅 동의 업데이트 + 이벤트 로그 병렬 처리
+  await Promise.all([
+    consentGiven
+      ? supabase.from('users').update({ allow_dev_marketing: true }).eq('id', user_id)
+      : Promise.resolve(),
+    supabase.from('platform_events').insert({
+      actor_id: user_id,
+      event_type: 'license_purchased',
+      entity_type: 'license',
+      metadata: { app_id, tier, amount: amountKrw },
+    }),
+  ]);
 }
 
 // ───────── 업그레이드 ─────────

@@ -55,18 +55,16 @@ Base your analysis on the URL pattern and app description. Use realistic assumpt
     const audit = JSON.parse(jsonMatch[0]);
     const grade = scoreToGrade(audit.score);
 
-    // Save to Supabase (best-effort)
-    try {
-      const supabase = createClient();
-      await supabase.from('security_audits').insert({
-        app_url: appUrl,
-        app_name: appName || null,
-        score: audit.score,
-        grade,
-        checks: audit.checks,
-        recommendation: audit.recommendation,
-      });
-    } catch (_) {}
+    // 응답 먼저 반환 후 Supabase 저장 (블로킹 방지)
+    const supabase = createClient();
+    supabase.from('security_audits').insert({
+      app_url: appUrl,
+      app_name: appName || null,
+      score: audit.score,
+      grade,
+      checks: audit.checks,
+      recommendation: audit.recommendation,
+    }).then(() => {}).catch(() => {});
 
     return NextResponse.json({ ...audit, grade });
   } catch (err) {

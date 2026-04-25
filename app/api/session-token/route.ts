@@ -3,14 +3,22 @@ import { createClient } from '@/lib/supabase/server';
 
 const SECRET = process.env.SESSION_TOKEN_SECRET || 'plutos-fallback-secret-change-in-prod';
 
-async function sign(payload: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
+// 키를 모듈 레벨에서 1회만 임포트 (요청마다 재생성 방지)
+let _cachedKey: CryptoKey | null = null;
+async function getKey(): Promise<CryptoKey> {
+  if (_cachedKey) return _cachedKey;
+  _cachedKey = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(SECRET),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
   );
+  return _cachedKey;
+}
+
+async function sign(payload: string): Promise<string> {
+  const key = await getKey();
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload));
   return Buffer.from(sig).toString('base64url');
 }
