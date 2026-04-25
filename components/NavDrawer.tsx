@@ -202,9 +202,27 @@ export function NavDrawer() {
               ))}
             </nav>
 
-            {/* 푸터 */}
-            <div style={{ padding: '14px 20px', borderTop: '1px solid #1e1218' }}>
-              <p style={{ fontSize: 10, color: '#2a2020', fontFamily: "'IBM Plex Sans KR', sans-serif" }}>
+            {/* PRO 업그레이드 버튼 */}
+            <div style={{ padding: '12px 16px', borderTop: '1px solid #1e1218' }}>
+              <a
+                href="/developer/pro"
+                onClick={() => setOpen(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 14px', borderRadius: 12, textDecoration: 'none',
+                  background: 'linear-gradient(135deg, #1a0404, #2a0808)',
+                  border: '1px solid #660000',
+                  boxShadow: '0 0 20px rgba(102,0,0,0.2)',
+                }}
+              >
+                <span style={{ fontSize: 18 }}>⚡</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#cc1a1a', fontFamily: 'Cinzel, serif', letterSpacing: '0.1em' }}>PRO 업그레이드</div>
+                  <div style={{ fontSize: 10, color: '#664444', fontFamily: "'IBM Plex Sans KR', sans-serif", marginTop: 1 }}>수수료 20% → 5% · 월 ₩29,000</div>
+                </div>
+                <span style={{ fontSize: 12, color: '#660000' }}>→</span>
+              </a>
+              <p style={{ fontSize: 10, color: '#2a2020', fontFamily: "'IBM Plex Sans KR', sans-serif", marginTop: 10, textAlign: 'center' }}>
                 © 2026 PLUTOS · All rights reserved.
               </p>
             </div>
