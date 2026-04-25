@@ -176,7 +176,7 @@ function LayerCard({ n, title, desc, delay }: {
       style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}
     >
       <div className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${n === 1 ? C.red : n === 2 ? C.redDim : '#550000'}, transparent)` }} />
+        style={{ background: `linear-gradient(90deg, transparent, ${n === 1 ? C.red : n === 2 ? C.redDim : n === 3 ? '#770000' : n === 4 ? C.redDim : '#550000'}, transparent)` }} />
       <div className="text-[10px] font-black mb-3 tracking-widest" style={{ color: C.redDim, fontFamily: C.cinzel }}>LAYER {n}</div>
       <div className="text-sm font-semibold mb-2" style={{ color: C.text, fontFamily: C.cinzel }}>{title}</div>
       <div className="text-xs leading-relaxed" style={{ color: C.sub, fontFamily: C.ibm, fontWeight: 300 }}>{desc}</div>
@@ -271,12 +271,14 @@ const T = {
     ],
     div03: '03 · Technical Moat',
     techEyebrow: '기술적 해자',
-    techH3a: '3중 보안으로',
+    techH3a: '5중 보안 레이어로',
     techH3b: '개발자를 보호합니다',
     layers: [
-      { title: 'Secure Proxy',         desc: '소스 코드 노출 방지 및 실시간 트래픽 제어.' },
-      { title: 'Advanced Obfuscation', desc: '독자적 난독화 기술로 역공학을 원천 차단.' },
-      { title: 'Device Binding',       desc: '하드웨어 기반 인증으로 무단 복제 방지.' },
+      { title: 'Domain Lock SW',       desc: 'Service Worker가 허가된 도메인만 허용. 클론 사이트는 즉시 차단됩니다.' },
+      { title: 'WebAuthn 생체인증',    desc: '지문·FaceID로 라이선스를 기기에 바인딩. 계정 공유를 원천 차단합니다.' },
+      { title: 'HMAC Session Token',   desc: 'SHA-256 서명 단기 토큰으로 모든 앱 접근을 인증. 1시간 후 만료.' },
+      { title: 'FDS 다중 신호',        desc: 'UA·캔버스·타임존 지문으로 이상 결제 패턴을 자동 감지·플래그.' },
+      { title: 'JIT AES-GCM 복호화',  desc: '핵심 코드를 암호화 상태로 번들 저장. 실행 직전에만 복호화합니다.' },
     ],
     div04: '04 · Roadmap',
     roadEyebrow: '로드맵',
@@ -323,12 +325,14 @@ const T = {
     ],
     div03: '03 · Technical Moat',
     techEyebrow: 'Technical Moat',
-    techH3a: 'Triple-Layer Security',
+    techH3a: '5-Layer Security',
     techH3b: 'Protecting Every Developer',
     layers: [
-      { title: 'Secure Proxy',         desc: 'Prevents source code exposure and enables real-time traffic control.' },
-      { title: 'Advanced Obfuscation', desc: 'Proprietary obfuscation blocks reverse engineering at the root.' },
-      { title: 'Device Binding',       desc: 'Hardware-level authentication prevents unauthorized duplication.' },
+      { title: 'Domain Lock SW',       desc: 'Service Worker whitelists allowed origins. Cloned sites are blocked instantly.' },
+      { title: 'WebAuthn Biometrics',  desc: 'Fingerprint/FaceID binds each license to one device. Account sharing eliminated.' },
+      { title: 'HMAC Session Token',   desc: 'SHA-256 signed short-lived tokens authenticate every app access. 1-hour expiry.' },
+      { title: 'FDS Multi-Signal',     desc: 'UA + canvas + timezone fingerprinting auto-flags anomalous payment patterns.' },
+      { title: 'JIT AES-GCM Decrypt',  desc: 'Core code stored encrypted in the bundle, decrypted only at runtime.' },
     ],
     div04: '04 · Roadmap',
     roadEyebrow: 'Roadmap',
@@ -375,12 +379,14 @@ const T = {
     ],
     div03: '03 · 技術的優位性',
     techEyebrow: '技術的優位性',
-    techH3a: '3重セキュリティで',
+    techH3a: '5重セキュリティで',
     techH3b: '開発者を守ります',
     layers: [
-      { title: 'Secure Proxy',         desc: 'ソースコード露出防止とリアルタイムトラフィック制御。' },
-      { title: 'Advanced Obfuscation', desc: '独自難読化技術でリバースエンジニアリングを根本から防止。' },
-      { title: 'Device Binding',       desc: 'ハードウェアベース認証で不正複製を防止。' },
+      { title: 'Domain Lock SW',        desc: 'Service Workerが許可ドメインのみ許可。クローンサイトを即座にブロック。' },
+      { title: 'WebAuthn 生体認証',     desc: '指紋・FaceIDでライセンスをデバイスにバインド。アカウント共有を根本防止。' },
+      { title: 'HMAC セッショントークン', desc: 'SHA-256署名の短期トークンで全アクセスを認証。1時間で期限切れ。' },
+      { title: 'FDS マルチシグナル',    desc: 'UA・Canvas・タイムゾーン指紋で異常な決済パターンを自動フラグ。' },
+      { title: 'JIT AES-GCM 復号',     desc: 'コアコードは暗号化してバンドルに格納、実行直前のみ復号。' },
     ],
     div04: '04 · ロードマップ',
     roadEyebrow: 'ロードマップ',
@@ -427,12 +433,14 @@ const T = {
     ],
     div03: '03 · 技术护城河',
     techEyebrow: '技术护城河',
-    techH3a: '三重安全防护',
+    techH3a: '五重安全防护',
     techH3b: '保护每位开发者',
     layers: [
-      { title: 'Secure Proxy',         desc: '防止源代码泄露并实现实时流量控制。' },
-      { title: 'Advanced Obfuscation', desc: '独特混淆技术从根本上阻止逆向工程。' },
-      { title: 'Device Binding',       desc: '基于硬件的身份验证防止未授权复制。' },
+      { title: 'Domain Lock SW',       desc: 'Service Worker只允许白名单域名。克隆站点即时拦截。' },
+      { title: 'WebAuthn 生物认证',    desc: '指纹/FaceID将许可证绑定到单一设备。账号共享彻底消除。' },
+      { title: 'HMAC 会话令牌',        desc: 'SHA-256签名短期令牌认证每次应用访问。1小时过期。' },
+      { title: 'FDS 多信号检测',       desc: 'UA+Canvas+时区指纹自动标记异常支付模式。' },
+      { title: 'JIT AES-GCM 解密',    desc: '核心代码以加密形式存储在包中，仅在运行时解密。' },
     ],
     div04: '04 · 路线图',
     roadEyebrow: '路线图',
@@ -479,12 +487,14 @@ const T = {
     ],
     div03: '03 · Ventaja Técnica',
     techEyebrow: 'Ventaja Técnica',
-    techH3a: 'Seguridad Triple Capa',
+    techH3a: 'Seguridad 5 Capas',
     techH3b: 'Protegiendo a Cada Desarrollador',
     layers: [
-      { title: 'Secure Proxy',         desc: 'Previene la exposición del código fuente y permite control de tráfico en tiempo real.' },
-      { title: 'Advanced Obfuscation', desc: 'Ofuscación propietaria que bloquea la ingeniería inversa desde la raíz.' },
-      { title: 'Device Binding',       desc: 'Autenticación a nivel de hardware que previene la duplicación no autorizada.' },
+      { title: 'Domain Lock SW',       desc: 'Service Worker permite solo orígenes autorizados. Sitios clonados bloqueados al instante.' },
+      { title: 'WebAuthn Biométrico',  desc: 'Huella/FaceID vincula la licencia a un dispositivo. Compartir cuentas eliminado.' },
+      { title: 'HMAC Token Sesión',    desc: 'Tokens SHA-256 firmados de corta duración autentican cada acceso. Expiran en 1 hora.' },
+      { title: 'FDS Multi-Señal',      desc: 'UA + canvas + zona horaria marcan automáticamente pagos anómalos.' },
+      { title: 'JIT AES-GCM Decrypt',  desc: 'Código núcleo almacenado cifrado en el bundle, descifrado solo en tiempo de ejecución.' },
     ],
     div04: '04 · Hoja de Ruta',
     roadEyebrow: 'Hoja de Ruta',
@@ -531,12 +541,14 @@ const T = {
     ],
     div03: '03 · Avantage Technique',
     techEyebrow: 'Avantage Technique',
-    techH3a: 'Sécurité Triple Couche',
+    techH3a: 'Sécurité 5 Couches',
     techH3b: 'Protégeant Chaque Développeur',
     layers: [
-      { title: 'Secure Proxy',         desc: 'Prévient l\'exposition du code source et permet le contrôle du trafic en temps réel.' },
-      { title: 'Advanced Obfuscation', desc: 'Obfuscation propriétaire bloquant l\'ingénierie inverse à la racine.' },
-      { title: 'Device Binding',       desc: 'Authentification au niveau matériel empêchant la duplication non autorisée.' },
+      { title: 'Domain Lock SW',       desc: 'Le Service Worker n\'autorise que les origines whitelistées. Sites clonés bloqués instantanément.' },
+      { title: 'WebAuthn Biométrie',   desc: 'Empreinte/FaceID lie la licence à un seul appareil. Partage de compte éliminé.' },
+      { title: 'HMAC Token Session',   desc: 'Tokens SHA-256 signés à durée limitée authentifient chaque accès. Expiration 1 heure.' },
+      { title: 'FDS Multi-Signal',     desc: 'UA + canvas + fuseau horaire signalent automatiquement les paiements anormaux.' },
+      { title: 'JIT AES-GCM Decrypt',  desc: 'Code principal stocké chiffré dans le bundle, déchiffré uniquement à l\'exécution.' },
     ],
     div04: '04 · Feuille de Route',
     roadEyebrow: 'Feuille de Route',
@@ -583,12 +595,14 @@ const T = {
     ],
     div03: '03 · Technischer Vorteil',
     techEyebrow: 'Technischer Vorteil',
-    techH3a: 'Dreifach-Sicherheit',
+    techH3a: 'Fünffach-Sicherheit',
     techH3b: 'Schützt jeden Entwickler',
     layers: [
-      { title: 'Secure Proxy',         desc: 'Verhindert Quellcode-Exposition und ermöglicht Echtzeit-Traffic-Kontrolle.' },
-      { title: 'Advanced Obfuscation', desc: 'Proprietäre Verschleierung blockiert Reverse Engineering an der Wurzel.' },
-      { title: 'Device Binding',       desc: 'Hardware-basierte Authentifizierung verhindert unbefugte Vervielfältigung.' },
+      { title: 'Domain Lock SW',       desc: 'Service Worker erlaubt nur whitegelistete Origins. Geklonte Seiten sofort blockiert.' },
+      { title: 'WebAuthn Biometrie',   desc: 'Fingerabdruck/FaceID bindet die Lizenz an ein Gerät. Account-Sharing eliminiert.' },
+      { title: 'HMAC Session Token',   desc: 'SHA-256 signierte Kurzzeittoken authentifizieren jeden Zugriff. 1 Stunde Ablauf.' },
+      { title: 'FDS Multi-Signal',     desc: 'UA + Canvas + Zeitzone kennzeichnen automatisch anomale Zahlungsmuster.' },
+      { title: 'JIT AES-GCM Decrypt',  desc: 'Kerncode verschlüsselt im Bundle gespeichert, nur zur Laufzeit entschlüsselt.' },
     ],
     div04: '04 · Roadmap',
     roadEyebrow: 'Roadmap',
@@ -715,10 +729,10 @@ export function AboutSection() {
           </AnimatePresence>
         </Reveal>
 
-        <div className="text-[10px] uppercase tracking-[0.28em] mb-4" style={{ color: C.muted, fontFamily: C.cinzel }}>Triple Layer Security</div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="text-[10px] uppercase tracking-[0.28em] mb-4" style={{ color: C.muted, fontFamily: C.cinzel }}>5-Layer Security System</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {t.layers.map((l, i) => (
-            <LayerCard key={l.title} n={i + 1} delay={i * 0.09} title={l.title} desc={l.desc} />
+            <LayerCard key={l.title} n={i + 1} delay={i * 0.08} title={l.title} desc={l.desc} />
           ))}
         </div>
 
