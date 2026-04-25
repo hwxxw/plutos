@@ -18,59 +18,71 @@ export default async function DeveloperRegisterPage() {
 
   const BENEFITS = [
     {
-      icon: '💰',
-      title: '판매 수익 직접 수령',
-      desc: '앱 판매 수익을 바로 정산받습니다. 구독료 없이 무료로 시작하세요.',
-    },
-    {
-      icon: '⚡',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+        </svg>
+      ),
       title: '즉시 마켓 노출',
-      desc: '앱 등록 및 검토 통과 즉시 PLUTOS 마켓에 노출됩니다.',
+      desc: '심사 통과 즉시 PLUTOS 마켓에 노출됩니다.',
     },
     {
-      icon: '📊',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      ),
+      title: '판매 수익 직접 수령',
+      desc: '수익을 Stripe로 직접 정산. 구독료 없이 무료 시작.',
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+        </svg>
+      ),
       title: '실시간 대시보드',
-      desc: '판매량, 수익, 고객 데이터를 실시간 대시보드에서 확인하세요.',
+      desc: '판매량, 수익, 고객 데이터를 실시간으로 확인.',
     },
     {
-      icon: '🔐',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      ),
       title: 'JS 소스 보호',
-      desc: 'Pro 개발자는 동적 JS 난독화로 소스코드를 보호할 수 있습니다.',
+      desc: 'Pro 개발자는 난독화로 소스코드를 보호할 수 있습니다.',
     },
   ];
 
   return (
     <div className="max-w-lg mx-auto py-10">
-      {/* Header */}
       <div className="mb-8">
-        <div className="text-[11px] text-brand-500 font-bold uppercase tracking-[0.2em] mb-3">
+        <div className="text-[11px] uppercase tracking-[0.25em] mb-3" style={{ color: '#880000', fontFamily: 'Cinzel, serif' }}>
           PLUTOS Developer Program
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-white leading-tight">
-          개발자로{' '}
-          <span className="text-brand-500">시작하기</span>
+        <h1 className="text-3xl font-black leading-tight mb-2" style={{ fontFamily: 'Cinzel, serif', color: '#e8e8e8' }}>
+          개발자로<br /><span style={{ color: '#cc1a1a' }}>시작하기</span>
         </h1>
-        <p className="mt-2 text-zinc-400 text-sm leading-relaxed">
-          당신의 AI 웹툴을 수천 명에게 판매하세요.
-          <br />무료로 등록하고 판매 수익을 바로 받아가세요.
+        <p className="text-sm leading-relaxed" style={{ color: '#888888', fontFamily: "'IBM Plex Sans KR', sans-serif" }}>
+          당신의 AI 웹툴을 수천 명에게 판매하세요.<br />
+          무료로 등록하고 판매 수익을 바로 받아가세요.
         </p>
       </div>
 
-      {/* Benefits */}
-      <div className="grid grid-cols-2 gap-2 mb-8">
+      <div className="grid grid-cols-2 gap-3 mb-8">
         {BENEFITS.map((item) => (
-          <div key={item.title} className="card hover:border-zinc-600 transition-colors duration-150">
-            <span className="text-xl mb-2 block">{item.icon}</span>
-            <div className="font-semibold text-white text-sm">{item.title}</div>
-            <div className="text-zinc-500 text-xs mt-1 leading-relaxed">{item.desc}</div>
+          <div key={item.title} className="rounded-xl p-4" style={{ backgroundColor: '#120a0e', border: '1px solid #2a1515' }}>
+            <div className="mb-3" style={{ color: '#880000' }}>{item.icon}</div>
+            <div className="font-semibold text-sm mb-1" style={{ color: '#e8e8e8', fontFamily: 'Cinzel, serif' }}>{item.title}</div>
+            <div className="text-xs leading-relaxed" style={{ color: '#888888', fontFamily: "'IBM Plex Sans KR', sans-serif" }}>{item.desc}</div>
           </div>
         ))}
       </div>
 
-      {/* Registration form */}
       <form action="/api/developer/activate" method="POST" className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">
+          <label className="block text-[11px] uppercase tracking-widest mb-2" style={{ color: '#664444', fontFamily: 'Cinzel, serif' }}>
             개발자 표시명
           </label>
           <input
@@ -78,35 +90,38 @@ export default async function DeveloperRegisterPage() {
             type="text"
             defaultValue={profile?.display_name ?? ''}
             placeholder="홍길동 / Studio Name"
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500 transition-colors duration-150"
             required
             minLength={2}
             maxLength={30}
+            className="w-full rounded-lg px-4 py-3 text-sm outline-none"
+            style={{ backgroundColor: '#0d0a10', border: '1px solid #3a1515', color: '#e8e8e8' }}
           />
-          <p className="text-[11px] text-zinc-600 mt-1">마켓에서 사용자에게 표시되는 이름입니다</p>
+          <p className="text-[10px] mt-1" style={{ color: '#4a3535' }}>마켓에서 사용자에게 표시되는 이름입니다</p>
         </div>
 
-        <div className="flex items-start gap-2.5">
+        <div className="flex items-start gap-3">
           <input
             type="checkbox"
             id="agree"
             required
-            className="mt-0.5 w-4 h-4 accent-brand-600 flex-shrink-0"
+            className="mt-0.5 w-4 h-4 flex-shrink-0"
+            style={{ accentColor: '#cc1a1a' }}
           />
-          <label htmlFor="agree" className="text-xs text-zinc-400 leading-relaxed">
-            <span className="text-white font-medium">개발자 이용약관</span>에 동의합니다.
+          <label htmlFor="agree" className="text-xs leading-relaxed" style={{ color: '#888888', fontFamily: "'IBM Plex Sans KR', sans-serif" }}>
+            <span style={{ color: '#e8e8e8', fontWeight: 600 }}>개발자 이용약관</span>에 동의합니다.
             플랫폼 수수료 및 운영 정책을 확인하고 동의합니다.
           </label>
         </div>
 
         <button
           type="submit"
-          className="btn-primary w-full py-3 text-sm tracking-wide"
+          className="btn-primary w-full py-3 text-sm"
+          style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.1em' }}
         >
           개발자 계정 활성화하기 →
         </button>
 
-        <p className="text-center text-xs text-zinc-600">
+        <p className="text-center text-[11px]" style={{ color: '#4a3535' }}>
           무료로 시작 · 언제든 탈퇴 가능
         </p>
       </form>

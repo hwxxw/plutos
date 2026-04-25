@@ -5,11 +5,22 @@ import { useRouter } from 'next/navigation';
 import { TIER_INFO, type TierName } from '@/lib/supabase/types';
 import { formatKRW } from '@/lib/format';
 
-type TierForm = {
-  enabled: boolean;
-  price_krw: number;
-  max_seats: number;
+const C = {
+  card:   '#120a0e',
+  border: '#2a1515',
+  borderA:'#660000',
+  red:    '#cc1a1a',
+  redDim: '#880000',
+  text:   '#e8e8e8',
+  sub:    '#888888',
+  muted:  '#4a3535',
+  input:  '#0d0a10',
+  inputBorder: '#3a1515',
+  cinzel: 'Cinzel, serif' as const,
+  ibm:    "'IBM Plex Sans KR', sans-serif" as const,
 };
+
+type TierForm = { enabled: boolean; price_krw: number; max_seats: number };
 
 const DEFAULT_TIERS: Record<TierName, TierForm> = {
   basic:    { enabled: true,  price_krw: 9900,   max_seats: 1 },
@@ -28,6 +39,44 @@ const CATEGORIES = [
   { k: 'dev',        l: '개발' },
 ];
 
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="block text-[11px] uppercase tracking-widest mb-2" style={{ color: '#664444', fontFamily: C.cinzel }}>
+      {children}
+    </label>
+  );
+}
+
+function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className="w-full rounded-lg px-4 py-3 text-sm outline-none"
+      style={{ backgroundColor: C.input, border: `1px solid ${C.inputBorder}`, color: C.text, ...props.style }}
+    />
+  );
+}
+
+function Textarea({ ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className="w-full rounded-lg px-4 py-3 text-sm outline-none resize-none"
+      style={{ backgroundColor: C.input, border: `1px solid ${C.inputBorder}`, color: C.text, ...props.style }}
+    />
+  );
+}
+
+function Select({ ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      {...props}
+      className="w-full rounded-lg px-4 py-3 text-sm outline-none"
+      style={{ backgroundColor: C.input, border: `1px solid ${C.inputBorder}`, color: C.text, ...props.style }}
+    />
+  );
+}
+
 export default function NewAppPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -41,7 +90,7 @@ export default function NewAppPage() {
     origin_url: '',
     icon_url: '',
     category: 'writing',
-    theme_color: '#6366f1',
+    theme_color: '#cc1a1a',
   });
   const [tiers, setTiers] = useState<Record<TierName, TierForm>>(DEFAULT_TIERS);
 
@@ -66,28 +115,20 @@ export default function NewAppPage() {
         return `${info.label} 티어 가격은 ${formatKRW(info.minPrice)} ~ ${formatKRW(info.maxPrice)} 사이여야 합니다.`;
       }
     }
-
     return null;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const err = validateForm();
-    if (err) {
-      setError(err);
-      return;
-    }
+    if (err) { setError(err); return; }
     setLoading(true);
     setError(null);
 
     try {
       const activeTiers = (Object.keys(tiers) as TierName[])
         .filter((t) => tiers[t].enabled)
-        .map((t) => ({
-          tier: t,
-          price_krw: tiers[t].price_krw,
-          max_seats: tiers[t].max_seats,
-        }));
+        .map((t) => ({ tier: t, price_krw: tiers[t].price_krw, max_seats: tiers[t].max_seats }));
 
       const res = await fetch('/api/developer/apps', {
         method: 'POST',
@@ -97,7 +138,6 @@ export default function NewAppPage() {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '등록 실패');
-
       router.push(`/developer/apps/${data.app_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : '오류');
@@ -106,200 +146,147 @@ export default function NewAppPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 max-w-lg mx-auto">
-      <h1 className="text-xl font-bold">새 앱 등록</h1>
+    <div className="max-w-lg mx-auto py-10 space-y-6">
+      <div>
+        <div className="text-[11px] uppercase tracking-[0.25em] mb-2" style={{ color: C.redDim, fontFamily: C.cinzel }}>
+          Developer · New App
+        </div>
+        <h1 className="text-3xl font-black mb-1" style={{ fontFamily: C.cinzel, color: C.text }}>새 앱 등록</h1>
+        <p className="text-sm" style={{ color: C.sub, fontFamily: C.ibm }}>
+          등록 후 관리자 심사를 거쳐 마켓에 게시됩니다.
+        </p>
+      </div>
 
       {error && (
-        <div className="card bg-red-50 border-red-200 text-red-700 text-sm">{error}</div>
+        <div className="rounded-lg p-4 text-sm" style={{ backgroundColor: '#1a0404', border: '1px solid #660000', color: '#cc3333', fontFamily: C.ibm }}>
+          {error}
+        </div>
       )}
 
-      {/* 기본 정보 */}
-      <section className="card space-y-3">
-        <h2 className="font-semibold text-sm text-slate-700">기본 정보</h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* 기본 정보 */}
+        <section className="rounded-2xl p-6 space-y-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <div className="text-[11px] uppercase tracking-widest" style={{ color: C.muted, fontFamily: C.cinzel }}>기본 정보</div>
 
-        <div>
-          <label className="block text-xs font-semibold mb-1">앱 이름</label>
-          <input
-            required
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-            placeholder="예: 문서 요약 AI"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold mb-1">짧은 이름 (홈화면용)</label>
-          <input
-            required
-            maxLength={20}
-            value={form.short_name}
-            onChange={(e) => setForm({ ...form, short_name: e.target.value })}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-            placeholder="예: 문서요약"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold mb-1">태그라인</label>
-          <input
-            maxLength={100}
-            value={form.tagline}
-            onChange={(e) => setForm({ ...form, tagline: e.target.value })}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-            placeholder="한 줄 설명"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold mb-1">상세 설명 (20자 이상)</label>
-          <textarea
-            required
-            rows={4}
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold mb-1">
-            원본 URL (비공개 저장)
-          </label>
-          <input
-            required
-            type="url"
-            value={form.origin_url}
-            onChange={(e) => setForm({ ...form, origin_url: e.target.value })}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-            placeholder="https://my-app.example.com"
-          />
-          <p className="text-[10px] text-slate-500 mt-1">
-            외부에 절대 노출되지 않습니다. 프록시 서버만 접근.
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold mb-1">아이콘 URL (192×192 PNG)</label>
-          <input
-            required
-            type="url"
-            value={form.icon_url}
-            onChange={(e) => setForm({ ...form, icon_url: e.target.value })}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold mb-1">카테고리</label>
-            <select
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.k} value={c.k}>{c.l}</option>
-              ))}
-            </select>
+            <Label>앱 이름 *</Label>
+            <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="예: 문서 요약 AI" />
           </div>
+
           <div>
-            <label className="block text-xs font-semibold mb-1">테마 색상</label>
-            <input
-              type="color"
-              value={form.theme_color}
-              onChange={(e) => setForm({ ...form, theme_color: e.target.value })}
-              className="w-full h-10 border border-slate-300 rounded-lg"
-            />
+            <Label>짧은 이름 (홈화면용) *</Label>
+            <Input required maxLength={20} value={form.short_name} onChange={(e) => setForm({ ...form, short_name: e.target.value })} placeholder="예: 문서요약" />
           </div>
-        </div>
-      </section>
 
-      {/* 티어 설정 */}
-      <section className="card space-y-4">
-        <h2 className="font-semibold text-sm text-slate-700">가격 티어 설정</h2>
-        <p className="text-xs text-slate-500">
-          최소 1개 이상 활성화. Plus 활성화 권장 (프리미엄 효과).
-        </p>
+          <div>
+            <Label>태그라인</Label>
+            <Input maxLength={100} value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} placeholder="한 줄 설명" />
+          </div>
 
-        {(Object.keys(TIER_INFO) as TierName[]).map((t) => {
-          const info = TIER_INFO[t];
-          const seats = Array.isArray(info.seats) ? info.seats : [info.seats];
-          return (
-            <div
-              key={t}
-              className={`border-2 rounded-xl p-3 transition ${
-                tiers[t].enabled
-                  ? 'border-brand-200 bg-brand-50'
-                  : 'border-slate-200 bg-white'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <input
-                  type="checkbox"
-                  checked={tiers[t].enabled}
-                  onChange={(e) => updateTier(t, { enabled: e.target.checked })}
-                  className="w-4 h-4"
-                />
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: info.color }}
-                />
-                <span className="font-bold">{info.label}</span>
-                <span className="text-xs text-slate-500">{info.description}</span>
-              </div>
+          <div>
+            <Label>상세 설명 (20자 이상) *</Label>
+            <Textarea required rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          </div>
 
-              {tiers[t].enabled && (
-                <div className="ml-6 space-y-2">
-                  <div>
-                    <label className="block text-[10px] font-semibold mb-1">
-                      가격 ({formatKRW(info.minPrice)} ~ {formatKRW(info.maxPrice)})
-                    </label>
-                    <input
-                      type="number"
-                      step="100"
-                      min={info.minPrice}
-                      max={info.maxPrice}
-                      value={tiers[t].price_krw}
-                      onChange={(e) =>
-                        updateTier(t, { price_krw: parseInt(e.target.value || '0', 10) })
-                      }
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
-                    />
-                  </div>
+          <div>
+            <Label>원본 URL (비공개 저장) *</Label>
+            <Input required type="url" value={form.origin_url} onChange={(e) => setForm({ ...form, origin_url: e.target.value })} placeholder="https://my-app.example.com" />
+            <p className="text-[10px] mt-1" style={{ color: C.muted }}>외부에 절대 노출되지 않습니다. 프록시 서버만 접근합니다.</p>
+          </div>
 
-                  {t === 'business' && (
-                    <div>
-                      <label className="block text-[10px] font-semibold mb-1">
-                        공유 인원 (Seat 수)
-                      </label>
-                      <select
-                        value={tiers[t].max_seats}
-                        onChange={(e) =>
-                          updateTier(t, { max_seats: parseInt(e.target.value, 10) })
-                        }
-                        className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
-                      >
-                        {seats.map((s) => (
-                          <option key={s} value={s}>{s}명</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-              )}
+          <div>
+            <Label>아이콘 URL (192×192 PNG) *</Label>
+            <Input required type="url" value={form.icon_url} onChange={(e) => setForm({ ...form, icon_url: e.target.value })} placeholder="https://..." />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>카테고리</Label>
+              <Select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                {CATEGORIES.map((c) => (
+                  <option key={c.k} value={c.k} style={{ backgroundColor: '#0d0a10' }}>{c.l}</option>
+                ))}
+              </Select>
             </div>
-          );
-        })}
-      </section>
+            <div>
+              <Label>테마 색상</Label>
+              <div className="flex gap-2">
+                <input type="color" value={form.theme_color} onChange={(e) => setForm({ ...form, theme_color: e.target.value })}
+                  className="h-12 w-12 rounded-lg cursor-pointer border-0 p-1"
+                  style={{ backgroundColor: '#0d0a10', border: `1px solid ${C.inputBorder}` }} />
+                <Input value={form.theme_color} onChange={(e) => setForm({ ...form, theme_color: e.target.value })} />
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full btn-primary py-3"
-      >
-        {loading ? '등록 중...' : '등록 (검토 대기)'}
-      </button>
-    </form>
+        {/* 티어 설정 */}
+        <section className="rounded-2xl p-6 space-y-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <div>
+            <div className="text-[11px] uppercase tracking-widest mb-1" style={{ color: C.muted, fontFamily: C.cinzel }}>가격 티어 설정</div>
+            <p className="text-xs" style={{ color: C.sub, fontFamily: C.ibm }}>최소 1개 이상 활성화. Plus 활성화 권장.</p>
+          </div>
+
+          {(Object.keys(TIER_INFO) as TierName[]).map((t) => {
+            const info = TIER_INFO[t];
+            const seats = Array.isArray(info.seats) ? info.seats : [info.seats];
+            const isOn = tiers[t].enabled;
+            return (
+              <div key={t} className="rounded-xl p-4 transition-all"
+                style={{
+                  backgroundColor: isOn ? '#1a0404' : '#0d0a10',
+                  border: `1px solid ${isOn ? C.borderA : C.border}`,
+                }}>
+                <div className="flex items-center gap-3 mb-2">
+                  <input type="checkbox" checked={isOn} onChange={(e) => updateTier(t, { enabled: e.target.checked })}
+                    className="w-4 h-4" style={{ accentColor: C.red }} />
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: info.color }} />
+                  <span className="font-semibold text-sm" style={{ color: C.text, fontFamily: C.cinzel }}>{info.label}</span>
+                  <span className="text-xs" style={{ color: C.sub }}>{info.description}</span>
+                </div>
+
+                {isOn && (
+                  <div className="ml-7 space-y-3 mt-3">
+                    <div>
+                      <Label>가격 ({formatKRW(info.minPrice)} ~ {formatKRW(info.maxPrice)})</Label>
+                      <Input type="number" step="100" min={info.minPrice} max={info.maxPrice}
+                        value={tiers[t].price_krw}
+                        onChange={(e) => updateTier(t, { price_krw: parseInt(e.target.value || '0', 10) })} />
+                    </div>
+                    {t === 'business' && (
+                      <div>
+                        <Label>공유 인원 (Seat 수)</Label>
+                        <Select value={tiers[t].max_seats}
+                          onChange={(e) => updateTier(t, { max_seats: parseInt(e.target.value, 10) })}>
+                          {seats.map((s) => (
+                            <option key={s} value={s} style={{ backgroundColor: '#0d0a10' }}>{s}명</option>
+                          ))}
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </section>
+
+        <button type="submit" disabled={loading}
+          className="w-full py-3 rounded-lg text-sm font-semibold transition-all"
+          style={{
+            backgroundColor: loading ? '#330000' : C.red,
+            color: '#fff',
+            fontFamily: C.cinzel,
+            letterSpacing: '0.1em',
+            opacity: loading ? 0.7 : 1,
+          }}>
+          {loading ? '등록 중...' : '심사 신청하기 →'}
+        </button>
+
+        <p className="text-center text-xs" style={{ color: C.muted }}>
+          등록 후 관리자 심사 → 승인 시 마켓 노출
+        </p>
+      </form>
+    </div>
   );
 }
