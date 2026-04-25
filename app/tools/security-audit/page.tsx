@@ -140,7 +140,13 @@ export default function SecurityAuditPage() {
                   transition={{ delay: 0.1 + i * 0.06, type: 'spring' }}
                   className="flex items-start gap-4 px-5 py-3 border-b"
                   style={{ backgroundColor: '#120a0e', borderColor: '#1a1018' }}>
-                  <span className="text-base mt-0.5 flex-shrink-0">{c.pass ? '✅' : '❌'}</span>
+                  <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: c.pass ? '#0d1a0d' : '#1a0404', border: `1px solid ${c.pass ? '#1a4a1a' : '#4a1a1a'}` }}>
+                    {c.pass
+                      ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#cc1a1a" strokeWidth={2.5} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    }
+                  </div>
                   <div className="flex-1">
                     <div className="text-xs font-semibold mb-0.5" style={{ color: c.pass ? '#e8e8e8' : '#888888', fontFamily: 'Cinzel, serif' }}>{c.label}</div>
                     <div className="text-[11px]" style={{ color: '#554444', fontFamily: "'IBM Plex Sans KR', sans-serif" }}>{c.detail}</div>

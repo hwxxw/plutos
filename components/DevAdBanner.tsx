@@ -112,9 +112,11 @@ export function DevAdBanner({ apps }: { apps: AdApp[] }) {
                       className="w-10 h-10 rounded-xl object-cover mb-2"
                       style={{ backgroundColor: '#1a0a0e' }} />
                   ) : (
-                    <div className="w-10 h-10 rounded-xl mb-2 flex items-center justify-center text-lg"
-                      style={{ backgroundColor: '#1a0404', border: '1px solid #330000' }}>
-                      🤖
+                    <div className="w-10 h-10 rounded-xl mb-2 flex items-center justify-center"
+                      style={{ backgroundColor: '#1a0404', border: '1px solid #330000', color: '#440000' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="10" rx="2"/><path d="M12 11V7"/><circle cx="12" cy="5" r="2"/><path d="M7 15h.01M12 15h.01M17 15h.01"/>
+                      </svg>
                     </div>
                   )}
                   <div

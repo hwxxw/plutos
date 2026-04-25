@@ -7,31 +7,11 @@ import { motion } from 'framer-motion';
 import { formatKRW } from '@/lib/format';
 
 const BENEFITS = [
-  {
-    icon: '💸',
-    title: '수수료 20% → 5%',
-    desc: '기본 20%에서 정기결제 시 5%로 즉시 인하. 판매액이 클수록 절감액이 극적으로 증가합니다.',
-  },
-  {
-    icon: '⚡',
-    title: '즉시 정산',
-    desc: '3일 에스크로 유예 없이 판매 즉시 정산. 현금흐름을 완전히 통제하세요.',
-  },
-  {
-    icon: '👥',
-    title: '고객 CRM',
-    desc: '마케팅 동의 고객 이메일 목록 제공 + CSV 내보내기. 리마케팅의 핵심 자산.',
-  },
-  {
-    icon: '🔒',
-    title: '실시간 JS 난독화',
-    desc: '앱 소스코드 동적 난독화로 지적재산을 원천 보호. 복사 불가능한 방어막.',
-  },
-  {
-    icon: '⭐',
-    title: 'PRO 뱃지',
-    desc: '앱 카드에 PRO 개발자 표시. 구매 전환율을 높이는 신뢰 시그널.',
-  },
+  { icon: <IcoCoin />,   title: '수수료 20% → 5%',   desc: '기본 20%에서 정기결제 시 5%로 즉시 인하. 판매액이 클수록 절감액이 극적으로 증가합니다.' },
+  { icon: <IcoFlash />,  title: '즉시 정산',           desc: '3일 에스크로 유예 없이 판매 즉시 정산. 현금흐름을 완전히 통제하세요.' },
+  { icon: <IcoPeople />, title: '고객 CRM',            desc: '마케팅 동의 고객 이메일 목록 제공 + CSV 내보내기. 리마케팅의 핵심 자산.' },
+  { icon: <IcoShield />, title: '실시간 JS 난독화',    desc: '앱 소스코드 동적 난독화로 지적재산을 원천 보호. 복사 불가능한 방어막.' },
+  { icon: <IcoBadge />,  title: 'PRO 뱃지',            desc: '앱 카드에 PRO 개발자 표시. 구매 전환율을 높이는 신뢰 시그널.' },
 ];
 
 const SIMULATIONS = [
@@ -42,16 +22,9 @@ const SIMULATIONS = [
 ];
 
 const C = {
-  bg:      '#0d0d14',
-  card:    '#120a0e',
-  border:  '#2a1515',
-  red:     '#cc1a1a',
-  redDim:  '#660000',
-  text:    '#e8e8e8',
-  muted:   '#666666',
-  dim:     '#3a2828',
-  cinzel:  'Cinzel, serif',
-  sans:    "'IBM Plex Sans KR', sans-serif",
+  card: '#120a0e', border: '#2a1515', red: '#cc1a1a', redDim: '#660000',
+  text: '#e8e8e8', muted: '#666666', dim: '#3a2828',
+  cinzel: 'Cinzel, serif', sans: "'IBM Plex Sans KR', sans-serif",
 };
 
 export default function ProPage() {
@@ -60,8 +33,7 @@ export default function ProPage() {
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubscribe() {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       const res = await fetch('/api/developer/pro', { method: 'POST' });
       const data = await res.json();
@@ -79,8 +51,6 @@ export default function ProPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-10 space-y-6">
-
-      {/* Back */}
       <Link href="/developer" className="text-[11px] tracking-widest uppercase transition-colors"
         style={{ color: C.redDim, fontFamily: C.cinzel }}
         onMouseEnter={e => ((e.target as HTMLElement).style.color = C.red)}
@@ -88,41 +58,30 @@ export default function ProPage() {
         ← 대시보드
       </Link>
 
-      {/* Hero Card */}
+      {/* Hero */}
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 26 }}
         className="rounded-2xl p-8 text-center relative overflow-hidden"
-        style={{
-          background: 'linear-gradient(180deg, #1a0404 0%, #120a0e 100%)',
-          border: `1px solid ${C.border}`,
-          boxShadow: '0 0 60px rgba(74,4,4,0.25)',
-        }}
+        style={{ background: 'linear-gradient(180deg, #1a0404 0%, #120a0e 100%)', border: `1px solid ${C.border}`, boxShadow: '0 0 60px rgba(74,4,4,0.25)' }}
       >
-        {/* Top glow */}
         <div className="absolute top-0 left-0 right-0 h-px"
           style={{ background: 'linear-gradient(90deg, transparent, #660000, #cc1a1a, #660000, transparent)' }} />
 
         <div className="text-[10px] uppercase tracking-[0.3em] mb-4" style={{ color: C.redDim, fontFamily: C.cinzel }}>
           Developer Subscription
         </div>
-
         <div className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full"
           style={{ backgroundColor: '#1a0404', border: `1px solid ${C.border}` }}>
-          <span className="text-lg">⚡</span>
+          <IcoFlash color={C.red} size={16} />
           <span className="text-sm font-bold tracking-widest" style={{ color: C.red, fontFamily: C.cinzel }}>PRO</span>
         </div>
-
         <div className="mt-4">
-          <span className="text-5xl font-black" style={{ color: C.text, fontFamily: C.cinzel }}>
-            ₩29,000
-          </span>
+          <span className="text-5xl font-black" style={{ color: C.text, fontFamily: C.cinzel }}>₩29,000</span>
           <span className="text-sm ml-2" style={{ color: C.muted }}> / 월</span>
         </div>
         <p className="text-xs mt-2" style={{ color: C.dim }}>언제든 해지 가능 · Stripe 안전 결제</p>
 
-        {/* Fee comparison */}
         <div className="flex items-center justify-center gap-6 mt-6">
           <div className="text-center">
             <div className="text-2xl font-black" style={{ color: C.muted, fontFamily: C.cinzel }}>20%</div>
@@ -142,8 +101,7 @@ export default function ProPage() {
 
       {/* Benefits */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 26 }}
         className="rounded-2xl p-6 space-y-5"
         style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}
@@ -152,15 +110,13 @@ export default function ProPage() {
           Pro 혜택 5가지
         </div>
         {BENEFITS.map((b, i) => (
-          <motion.div
-            key={b.title}
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
+          <motion.div key={b.title}
+            initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.15 + i * 0.07, type: 'spring', stiffness: 300, damping: 28 }}
             className="flex items-start gap-4"
           >
-            <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-xl"
-              style={{ backgroundColor: '#1a0404', border: `1px solid ${C.border}` }}>
+            <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center"
+              style={{ backgroundColor: '#1a0404', border: `1px solid ${C.border}`, color: C.red }}>
               {b.icon}
             </div>
             <div>
@@ -171,10 +127,9 @@ export default function ProPage() {
         ))}
       </motion.div>
 
-      {/* Revenue simulation */}
+      {/* Simulation */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 26 }}
         className="rounded-2xl p-6"
         style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}
@@ -202,30 +157,23 @@ export default function ProPage() {
             );
           })}
         </div>
-        <p className="text-[10px] mt-3" style={{ color: C.dim }}>* Pro 구독료 차감 후 기본요금 대비 순추가 수익</p>
+        <p className="text-[10px] mt-3" style={{ color: C.dim }}>* 기본 수수료 대비 순추가 수익</p>
       </motion.div>
 
-      {/* Error */}
       {error && (
         <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: '#1a0404', border: '1px solid #660000', color: '#cc3333' }}>
           {error}
         </div>
       )}
 
-      {/* CTA */}
       <motion.button
-        onClick={handleSubscribe}
-        disabled={loading}
-        whileHover={loading ? {} : { scale: 1.02 }}
-        whileTap={loading ? {} : { scale: 0.98 }}
-        className="w-full py-4 rounded-2xl text-sm font-bold tracking-widest transition-all"
+        onClick={handleSubscribe} disabled={loading}
+        whileHover={loading ? {} : { scale: 1.02 }} whileTap={loading ? {} : { scale: 0.98 }}
+        className="w-full py-4 rounded-2xl text-sm font-bold tracking-widest"
         style={{
           background: loading ? '#330000' : 'linear-gradient(135deg, #cc1a1a, #880000)',
-          color: '#fff',
-          fontFamily: C.cinzel,
-          letterSpacing: '0.15em',
-          boxShadow: loading ? 'none' : '0 0 32px rgba(136,0,0,0.4)',
-          opacity: loading ? 0.7 : 1,
+          color: '#fff', fontFamily: C.cinzel, letterSpacing: '0.15em',
+          boxShadow: loading ? 'none' : '0 0 32px rgba(136,0,0,0.4)', opacity: loading ? 0.7 : 1,
         }}
       >
         {loading ? '처리 중...' : 'PRO 시작하기 — 월 ₩29,000'}
@@ -236,4 +184,20 @@ export default function ProPage() {
       </p>
     </div>
   );
+}
+
+function IcoCoin({ size = 18 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5C9.5 8.4 10.6 8 12 8s2.5.4 2.5 1.5-1.1 2-2.5 2-2.5.9-2.5 2S10.4 16 12 16s2.5-.4 2.5-1.5"/></svg>;
+}
+function IcoFlash({ size = 18, color }: { size?: number; color?: string }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || 'currentColor'} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+}
+function IcoPeople({ size = 18 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+}
+function IcoShield({ size = 18 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+}
+function IcoBadge({ size = 18 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>;
 }

@@ -217,7 +217,9 @@ export default function InstallPage() {
       {installed ? (
         <section className="card" style={{ backgroundColor: '#0d1a0d', border: '1px solid #1a3a1a' }}>
           <div className="text-center py-4">
-            <div className="text-4xl mb-2">✅</div>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: '#0d1a0d', border: '1px solid #1a4a1a' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
             <p className="font-bold" style={{ color: '#4ade80' }}>설치 완료!</p>
             <p className="text-xs mt-1" style={{ color: '#22c55e' }}>홈화면에서 앱을 실행하세요.</p>
           </div>
@@ -226,7 +228,9 @@ export default function InstallPage() {
           {webauthnSupported && webauthnStep === 'idle' && (
             <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: '#120a0e', border: '1px solid #2a1515' }}>
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0">🔐</span>
+                <div className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: '#1a0404', border: '1px solid #2a1515', color: '#cc1a1a' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold mb-1" style={{ color: '#e8e8e8' }}>생체인증 바인딩</p>
                   <p className="text-xs mb-3" style={{ color: '#888888' }}>
@@ -251,13 +255,13 @@ export default function InstallPage() {
 
           {webauthnStep === 'registering' && (
             <div className="mt-4 text-center text-sm" style={{ color: '#888888' }}>
-              🔐 생체인증 등록 중…
+              생체인증 등록 중…
             </div>
           )}
 
           {webauthnStep === 'done' && (
             <div className="mt-4 text-center text-sm" style={{ color: '#4ade80' }}>
-              🔒 생체인증 바인딩 완료 — 이 기기에만 라이선스가 잠금됩니다.
+              생체인증 바인딩 완료 — 이 기기에만 라이선스가 잠금됩니다.
             </div>
           )}
 

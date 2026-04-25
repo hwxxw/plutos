@@ -171,7 +171,7 @@ export default function LocalizationPreviewPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all"
               style={{ backgroundColor: '#0d1a0d', border: '1px solid #1a4a1a', color: '#4ade80' }}
             >
-              ⬇ JSON 다운로드
+              JSON 다운로드
             </button>
           </div>
 

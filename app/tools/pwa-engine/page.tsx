@@ -137,7 +137,7 @@ export default function PWAEnginePage() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 26 }}
             className="space-y-4">
             <div className="flex items-center gap-2 text-xs" style={{ color: '#00aa44' }}>
-              <span>✅</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               <span style={{ fontFamily: 'Cinzel, serif' }}>PWA 파일 생성 완료 — {result.slug}</span>
             </div>
 
