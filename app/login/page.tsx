@@ -1,22 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { MotionBtn } from '@/components/MotionBtn';
 import { motion } from 'framer-motion';
 
+const AUTH_ERROR_MSGS: Record<string, string> = {
+  auth_failed: '인증에 실패했습니다. 링크가 만료되었을 수 있습니다.',
+  auth_callback_failed: '로그인 처리에 실패했습니다. 다시 시도해주세요.',
+};
+
 export default function LoginPage() {
   const supabase = createClient();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
+  useEffect(() => {
+    const err = searchParams.get('error');
+    if (err) setMessage({ type: 'err', text: AUTH_ERROR_MSGS[err] ?? '오류가 발생했습니다.' });
+  }, [searchParams]);
+
   function getCallbackUrl() {
-    const params = new URLSearchParams(window.location.search);
-    const next = params.get('next') || '/';
+    const next = searchParams.get('next') || '/';
     return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
   }
 
@@ -35,6 +46,7 @@ export default function LoginPage() {
 
   async function handleOAuth(provider: 'google' | 'apple' | 'github' | 'kakao') {
     setLoadingProvider(provider);
+    setMessage(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: getCallbackUrl() },

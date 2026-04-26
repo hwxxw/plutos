@@ -15,7 +15,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3004',
 ];
 
-const CACHE_NAME = 'plutos-shell-v1';
+const CACHE_NAME = 'plutos-shell-v2';
 const SHELL_ASSETS = ['/', '/manifest.json', '/logo.png'];
 
 /* ── Install ── */
@@ -61,10 +61,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API 요청 / POST 등은 그냥 통과
+  // API / 인증 / Next 내부 요청은 SW 거치지 않고 직통
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/')) return;
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/_next/') ||
+    url.pathname.startsWith('/auth/')
+  ) return;
 
   // Shell assets: cache-first
   event.respondWith(
