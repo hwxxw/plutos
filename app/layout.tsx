@@ -1,24 +1,9 @@
 import type { Metadata, Viewport } from 'next';
-import { Cinzel, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { ClientProviders } from '@/components/ClientProviders';
 import Link from 'next/link';
 import { LogoImage } from '@/components/LogoImage';
-
-const cinzel = Cinzel({
-  subsets: ['latin'],
-  weight: ['400', '600', '700', '900'],
-  variable: '--font-cinzel',
-  display: 'swap',
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-space',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'PLUTOS — AI-Powered Web Tool Market',
@@ -36,9 +21,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={`${cinzel.variable} ${spaceGrotesk.variable}`}>
+    <html lang="ko">
       <head>
-        {/* IBM Plex Sans KR (Korean) — preconnect to Google Fonts CDN */}
+        {/* Google Fonts — preconnect으로 DNS+TLS 선행 처리 */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>

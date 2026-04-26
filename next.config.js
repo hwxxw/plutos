@@ -64,10 +64,7 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
-    // CSS 인라이닝 최적화 (critical CSS 자동 추출)
     optimizeCss: true,
-    // 패키지 트리 셰이킹 강화
-    optimizePackageImports: ['framer-motion', '@supabase/supabase-js'],
   },
 };
 
