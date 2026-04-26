@@ -221,5 +221,53 @@ CREATE TRIGGER trg_recalc_rating
   FOR EACH ROW EXECUTE FUNCTION trg_recalc_rating_fn();
 
 -- ============================================================
+-- 16. 성능 인덱스 (쿼리 최적화 핵심)
+-- ============================================================
+
+-- licenses: 가장 빈번한 조회 패턴
+CREATE INDEX IF NOT EXISTS idx_licenses_user_app_status
+  ON licenses(user_id, app_id, status);
+
+CREATE INDEX IF NOT EXISTS idx_licenses_payment_intent
+  ON licenses(stripe_payment_intent_id);
+
+CREATE INDEX IF NOT EXISTS idx_licenses_user_active
+  ON licenses(user_id, status) WHERE status = 'active';
+
+-- app_tiers: checkout/upgrade 시 빈번 조회
+CREATE INDEX IF NOT EXISTS idx_app_tiers_app_tier_active
+  ON app_tiers(app_id, tier, is_active);
+
+-- reviews: 앱 상세 페이지 조회
+CREATE INDEX IF NOT EXISTS idx_reviews_app_hidden
+  ON reviews(app_id, is_hidden, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_user_app
+  ON reviews(user_id, app_id);
+
+-- license_seats: 팀 관리
+CREATE INDEX IF NOT EXISTS idx_license_seats_license_status
+  ON license_seats(license_id, status);
+
+CREATE INDEX IF NOT EXISTS idx_license_seats_token
+  ON license_seats(invite_token) WHERE invite_token IS NOT NULL;
+
+-- users: referral_code 조회 (이미 UNIQUE이지만 명시)
+CREATE INDEX IF NOT EXISTS idx_users_referral_code
+  ON users(referral_code) WHERE referral_code IS NOT NULL;
+
+-- referrals
+CREATE INDEX IF NOT EXISTS idx_referrals_referred
+  ON referrals(referred_id, status);
+
+-- platform_events: 관리자 대시보드
+CREATE INDEX IF NOT EXISTS idx_platform_events_type_created
+  ON platform_events(event_type, created_at DESC);
+
+-- apps: 홈페이지 정렬
+CREATE INDEX IF NOT EXISTS idx_apps_featured_sales
+  ON apps(is_featured DESC, total_sales DESC) WHERE status = 'active';
+
+-- ============================================================
 -- 완료. 이제 Vercel에서 API/UI를 배포하세요.
 -- ============================================================

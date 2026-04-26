@@ -203,79 +203,30 @@ async function handleNewPurchase(
     throw error;
   }
 
-  // 포인트 차감 (사용한 경우)
-  if (pointsUsed > 0) {
-    await supabase.rpc('add_points', {
-      p_user_id: user_id,
-      p_amount: -pointsUsed,
-      p_type: 'checkout_use',
-      p_description: `${app_id} 구매 포인트 사용`,
-      p_reference_id: newLicense?.id || null,
-    });
-  }
-
-  // 구매 포인트 적립 (결제금액의 1%)
-  const earnPoints = Math.floor(amountKrw * 0.01);
-  if (earnPoints > 0) {
-    await supabase.rpc('add_points', {
-      p_user_id: user_id,
-      p_amount: earnPoints,
-      p_type: 'purchase_earn',
-      p_description: `구매 적립 (1%)`,
-      p_reference_id: newLicense?.id || null,
-    });
-  }
-
-  // total_spent_krw 업데이트 + 멤버십 등급 재계산
+  const licenseId = newLicense?.id || null;
   const actualSpent = parseInt(original_price_krw || String(amountKrw), 10);
-  await supabase.rpc('update_membership_tier_after_purchase', {
-    p_user_id: user_id,
-    p_amount: actualSpent,
-  }).catch((e) => {
-    console.error('[webhook] membership tier update failed:', e);
-  });
+  const earnPoints = Math.floor(amountKrw * 0.01);
 
-  // referred_by가 있으면 추천 완료 처리
-  const { data: userProfile } = await supabase
-    .from('users').select('referred_by').eq('id', user_id).maybeSingle();
+  // 포인트 차감/적립 + 멤버십 업데이트 + 유저 프로필 + 이벤트 로그 모두 병렬
+  const [, , , userProfileResult] = await Promise.all([
+    // 1) 포인트 차감 (사용한 경우)
+    pointsUsed > 0
+      ? supabase.rpc('add_points', { p_user_id: user_id, p_amount: -pointsUsed, p_type: 'checkout_use', p_description: `${app_id} 구매 포인트 사용`, p_reference_id: licenseId })
+      : Promise.resolve(),
+    // 2) 포인트 적립 (1%)
+    earnPoints > 0
+      ? supabase.rpc('add_points', { p_user_id: user_id, p_amount: earnPoints, p_type: 'purchase_earn', p_description: '구매 적립 (1%)', p_reference_id: licenseId })
+      : Promise.resolve(),
+    // 3) 멤버십 등급 재계산
+    supabase.rpc('update_membership_tier_after_purchase', { p_user_id: user_id, p_amount: actualSpent })
+      .catch((e: any) => console.error('[webhook] membership tier update failed:', e)),
+    // 4) 추천 처리를 위한 프로필 조회
+    supabase.from('users').select('referred_by').eq('id', user_id).maybeSingle(),
+  ]);
 
-  if (userProfile?.referred_by) {
-    const { data: pendingReferral } = await supabase
-      .from('referrals')
-      .select('id, points_awarded')
-      .eq('referrer_id', userProfile.referred_by)
-      .eq('referred_id', user_id)
-      .eq('status', 'pending')
-      .maybeSingle();
+  const userProfile = (userProfileResult as any)?.data;
 
-    if (pendingReferral) {
-      await supabase.from('referrals').update({
-        status: 'completed',
-        points_awarded: 2000,
-        completed_at: new Date().toISOString(),
-      }).eq('id', pendingReferral.id);
-
-      // 추천인 포인트 지급
-      await supabase.rpc('add_points', {
-        p_user_id: userProfile.referred_by,
-        p_amount: 2000,
-        p_type: 'referral_earn',
-        p_description: '추천인 보상',
-        p_reference_id: pendingReferral.id,
-      });
-
-      // 피추천인 보상
-      await supabase.rpc('add_points', {
-        p_user_id: user_id,
-        p_amount: 1000,
-        p_type: 'referral_bonus',
-        p_description: '첫 구매 추천 보너스',
-        p_reference_id: pendingReferral.id,
-      });
-    }
-  }
-
-  // 마케팅 동의 업데이트 + 이벤트 로그 병렬 처리
+  // 마케팅 동의 + 이벤트 로그 병렬
   await Promise.all([
     consentGiven
       ? supabase.from('users').update({ allow_dev_marketing: true }).eq('id', user_id)
@@ -287,6 +238,21 @@ async function handleNewPurchase(
       metadata: { app_id, tier, amount: amountKrw, points_used: pointsUsed },
     }),
   ]);
+
+  // 추천 완료 처리 (비동기 - 메인 흐름 블로킹 안 함)
+  if (userProfile?.referred_by) {
+    supabase.from('referrals').select('id')
+      .eq('referrer_id', userProfile.referred_by).eq('referred_id', user_id).eq('status', 'pending').maybeSingle()
+      .then(async ({ data: pendingReferral }) => {
+        if (!pendingReferral) return;
+        const now = new Date().toISOString();
+        await Promise.all([
+          supabase.from('referrals').update({ status: 'completed', points_awarded: 2000, completed_at: now }).eq('id', pendingReferral.id),
+          supabase.rpc('add_points', { p_user_id: userProfile.referred_by, p_amount: 2000, p_type: 'referral_earn', p_description: '추천인 보상', p_reference_id: pendingReferral.id }),
+          supabase.rpc('add_points', { p_user_id: user_id, p_amount: 1000, p_type: 'referral_bonus', p_description: '첫 구매 추천 보너스', p_reference_id: pendingReferral.id }),
+        ]);
+      }).catch((e: any) => console.error('[webhook] referral processing failed:', e));
+  }
 }
 
 // ───────── 업그레이드 ─────────

@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Supabase 타입은 실제 배포 시 `supabase gen types typescript`로 생성하는 것이 표준.
-  // 자동 생성 타입이 있으면 이 설정은 제거해도 됩니다.
+  compress: true, // gzip 압축 활성화
+  poweredByHeader: false, // X-Powered-By 헤더 제거 (보안 + 약간의 오버헤드 절감)
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -11,9 +11,12 @@ const nextConfig = {
       { protocol: 'https', hostname: '**.supabase.co' },
       { protocol: 'https', hostname: '**.supabase.in' },
     ],
+    minimumCacheTTL: 3600, // 이미지 캐시 1시간
+    formats: ['image/avif', 'image/webp'],
   },
   async headers() {
     return [
+      // 보안 헤더 — 전체
       {
         source: '/:path*',
         headers: [
@@ -23,7 +26,45 @@ const nextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
+      // 정적 에셋 — 1년 캐시
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      // 공개 정적 파일 — 1일 캐시
+      {
+        source: '/manifest.json',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+        ],
+      },
+      // Service Worker — 캐시 금지 (항상 최신 버전 확인)
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
+      },
+      // API — 캐시 금지
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store' },
+        ],
+      },
     ];
+  },
+  async rewrites() {
+    return [];
+  },
+  experimental: {
+    // 서버 액션 body 크기 제한
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
 };
 
