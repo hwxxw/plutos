@@ -7,23 +7,26 @@ const TIER_RANK: Record<TierName, number> = { basic: 1, plus: 2, business: 3 };
 
 export async function POST(request: Request) {
   try {
-    const { appId, tier } = await request.json() as { appId: string; tier: TierName };
+    const supabase = createClient();
+    // body parse + auth 병렬
+    const [{ appId, tier }, { data: { user } }] = await Promise.all([
+      request.json() as Promise<{ appId: string; tier: TierName }>,
+      supabase.auth.getUser(),
+    ]);
 
     if (!appId || !tier) {
       return NextResponse.json({ error: 'missing_params' }, { status: 400 });
     }
-
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-    // 기존 라이선스 + 앱 + 신규 티어 병렬 조회
-    const [{ data: currentLicense }, { data: app }, { data: newTier }] = await Promise.all([
+    // 기존 라이선스 + 앱 + 모든 티어 가격 병렬 조회 (4-way)
+    const [{ data: currentLicense }, { data: app }, { data: allTiers }, { data: newTier }] = await Promise.all([
       supabase.from('licenses')
         .select('id, tier, amount_paid_krw, app_id')
         .eq('user_id', user.id).eq('app_id', appId).eq('status', 'active')
         .maybeSingle(),
       supabase.from('apps_public').select('id, name, slug, icon_url, developer_id').eq('id', appId).maybeSingle(),
+      supabase.from('app_tiers').select('tier, price_krw').eq('app_id', appId),
       supabase.from('app_tiers').select('id, price_krw, max_seats')
         .eq('app_id', appId).eq('tier', tier).eq('is_active', true).maybeSingle(),
     ]);
@@ -36,12 +39,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'not_an_upgrade' }, { status: 400 });
     }
 
-    // 현재 티어 가격 별도 조회
-    const { data: currentTierData } = await supabase
-      .from('app_tiers').select('price_krw')
-      .eq('app_id', appId).eq('tier', currentLicense.tier).maybeSingle();
-
-    const currentTierPrice = currentTierData?.price_krw ?? currentLicense.amount_paid_krw;
+    const currentTierRow = (allTiers || []).find((t) => t.tier === currentLicense.tier);
+    const currentTierPrice = currentTierRow?.price_krw ?? currentLicense.amount_paid_krw;
     const priceDiff = newTier.price_krw - currentTierPrice;
 
     if (priceDiff <= 0) return NextResponse.json({ error: 'no_upgrade_cost' }, { status: 400 });

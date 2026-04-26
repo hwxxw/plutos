@@ -4,10 +4,12 @@ import { stripe } from '@/lib/stripe';
 
 export async function POST(req: NextRequest) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // body parse + auth 병렬
+  const [{ license_id, reason }, { data: { user } }] = await Promise.all([
+    req.json() as Promise<{ license_id: string; reason?: string }>,
+    supabase.auth.getUser(),
+  ]);
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-
-  const { license_id, reason } = await req.json() as { license_id: string; reason?: string };
   if (!license_id) return NextResponse.json({ error: 'missing_license_id' }, { status: 400 });
 
   const { data: license } = await supabase

@@ -3,16 +3,16 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
   try {
-    const { appId, rating, title, content } = await request.json() as {
-      appId: string; rating: number; title?: string; content?: string;
-    };
+    const supabase = createClient();
+    // body parse + auth 병렬
+    const [{ appId, rating, title, content }, { data: { user } }] = await Promise.all([
+      request.json() as Promise<{ appId: string; rating: number; title?: string; content?: string }>,
+      supabase.auth.getUser(),
+    ]);
 
     if (!appId || !rating || rating < 1 || rating > 5) {
       return NextResponse.json({ error: 'invalid_params' }, { status: 400 });
     }
-
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
     const [licenseResult, existingResult] = await Promise.all([

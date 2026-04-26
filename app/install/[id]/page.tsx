@@ -69,12 +69,12 @@ export default function InstallPage() {
     const supabase = createClient();
     (async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        // auth + appData 병렬
+        const [{ data: { user } }, { data: appData }] = await Promise.all([
+          supabase.auth.getUser(),
+          supabase.from('apps_public').select('name, icon_url, slug').eq('id', appId).maybeSingle(),
+        ]);
         if (!user) { router.replace(`/login?next=/install/${appId}`); return; }
-
-        const { data: appData } = await supabase
-          .from('apps_public').select('name, icon_url, slug')
-          .eq('id', appId).maybeSingle();
         if (!appData) { setError('앱을 찾을 수 없습니다.'); setLoading(false); return; }
         setApp(appData);
 
