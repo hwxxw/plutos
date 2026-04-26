@@ -99,27 +99,26 @@ async function handleProSubscription(
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
 
-  const { error } = await supabase
-    .from('users')
-    .update({
+  // 유저 업데이트 + 이벤트 로그 병렬
+  const [{ error }] = await Promise.all([
+    supabase.from('users').update({
       is_pro: true,
       pro_subscription_id: subscriptionId,
       pro_expires_at: expiresAt,
-    })
-    .eq('id', userId);
+    }).eq('id', userId),
+    supabase.from('platform_events').insert({
+      actor_id: userId,
+      event_type: 'pro_activated',
+      entity_type: 'user',
+      entity_id: userId,
+      metadata: { subscription_id: subscriptionId, expires_at: expiresAt },
+    }),
+  ]);
 
   if (error) {
     console.error('[webhook] pro activation failed:', error);
     throw error;
   }
-
-  await supabase.from('platform_events').insert({
-    actor_id: userId,
-    event_type: 'pro_activated',
-    entity_type: 'user',
-    entity_id: userId,
-    metadata: { subscription_id: subscriptionId, expires_at: expiresAt },
-  });
 }
 
 // ───────── Pro 구독 취소 ─────────
@@ -268,22 +267,19 @@ async function handleUpgrade(
     original_license_id, max_seats,
   } = m;
 
-  // 기존 라이선스를 'upgraded' 상태로
-  const { data: originalLicense } = await supabase
-    .from('licenses')
-    .select('*')
-    .eq('id', original_license_id)
-    .maybeSingle();
+  const priceDiff = session.amount_total || 0;
+
+  // 기존 라이선스 + 개발자 Pro 여부 병렬 조회
+  const [{ data: originalLicense }, { data: developer }] = await Promise.all([
+    supabase.from('licenses').select('*').eq('id', original_license_id).maybeSingle(),
+    supabase.from('users').select('is_pro').eq('id', developer_id).maybeSingle(),
+  ]);
 
   if (!originalLicense) {
     console.error('[webhook] original license not found:', original_license_id);
     return;
   }
 
-  const priceDiff = session.amount_total || 0;
-
-  const { data: developer } = await supabase
-    .from('users').select('is_pro').eq('id', developer_id).maybeSingle();
   const isPro = developer?.is_pro === true;
   const { feeRate, platformFee, developerPayout } = calculatePlatformFee(priceDiff, isPro);
   const escrowRelease = calculateEscrowRelease(isPro);
@@ -327,23 +323,24 @@ async function handleUpgrade(
     throw insErr;
   }
 
-  // 3) upgrade 기록
-  await supabase.from('license_upgrades').insert({
-    original_license_id,
-    new_license_id: newLicense.id,
-    from_tier,
-    to_tier,
-    price_diff_krw: priceDiff,
-    stripe_payment_intent_id: paymentIntentId,
-  });
-
-  await supabase.from('platform_events').insert({
-    actor_id: user_id,
-    event_type: 'license_upgraded',
-    entity_type: 'license',
-    entity_id: newLicense.id,
-    metadata: { app_id, from_tier, to_tier, price_diff: priceDiff },
-  });
+  // 3) upgrade 기록 + 이벤트 로그 병렬
+  await Promise.all([
+    supabase.from('license_upgrades').insert({
+      original_license_id,
+      new_license_id: newLicense.id,
+      from_tier,
+      to_tier,
+      price_diff_krw: priceDiff,
+      stripe_payment_intent_id: paymentIntentId,
+    }),
+    supabase.from('platform_events').insert({
+      actor_id: user_id,
+      event_type: 'license_upgraded',
+      entity_type: 'license',
+      entity_id: newLicense.id,
+      metadata: { app_id, from_tier, to_tier, price_diff: priceDiff },
+    }),
+  ]);
 }
 
 // ───────── 환불 ─────────
