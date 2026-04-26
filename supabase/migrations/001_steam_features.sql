@@ -122,7 +122,49 @@ CREATE POLICY IF NOT EXISTS "user_points_own"
 CREATE POLICY IF NOT EXISTS "wishlists_own"
   ON wishlists FOR ALL USING (user_id = auth.uid());
 
--- 10. 구매 후 total_spent_krw 업데이트 + 멤버십 자동 재계산
+-- 10. WebAuthn 테이블
+CREATE TABLE IF NOT EXISTS webauthn_challenges (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  challenge TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS webauthn_credentials (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  app_id UUID REFERENCES apps(id) ON DELETE CASCADE,
+  credential_id TEXT UNIQUE NOT NULL,
+  raw_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_webauthn_creds_user ON webauthn_credentials(user_id);
+
+ALTER TABLE webauthn_challenges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE webauthn_credentials ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY IF NOT EXISTS "webauthn_challenges_own"
+  ON webauthn_challenges FOR ALL USING (user_id = auth.uid());
+CREATE POLICY IF NOT EXISTS "webauthn_credentials_own"
+  ON webauthn_credentials FOR SELECT USING (user_id = auth.uid());
+
+-- 11. FDS (Fraud Detection) 테이블
+CREATE TABLE IF NOT EXISTS fraud_signals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  fingerprint_hash TEXT NOT NULL,
+  ip TEXT,
+  ua TEXT, screen TEXT, timezone TEXT, language TEXT,
+  platform TEXT, memory INTEGER, cores INTEGER, canvas_hash TEXT,
+  context TEXT,
+  flagged BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_fraud_signals_hash ON fraud_signals(fingerprint_hash);
+CREATE INDEX IF NOT EXISTS idx_fraud_signals_user ON fraud_signals(user_id);
+CREATE INDEX IF NOT EXISTS idx_fraud_signals_created ON fraud_signals(created_at DESC);
+
+-- 12. 구매 후 total_spent_krw 업데이트 + 멤버십 자동 재계산
 CREATE OR REPLACE FUNCTION update_membership_tier_after_purchase(
   p_user_id UUID, p_amount INTEGER
 )
