@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { formatKRW } from '@/lib/format';
 import type { PublicApp } from '@/lib/supabase/types';
@@ -27,13 +28,18 @@ export function AppCard({ app }: { app: PublicApp }) {
       transition={{ type: 'spring', stiffness: 420, damping: 22 }}
     >
       <div className="flex items-start gap-3">
-        <img
-          src={app.icon_url}
-          alt={app.name}
-          className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
-          style={{ backgroundColor: '#2a1010' }}
-          loading="lazy"
-        />
+        {app.icon_url ? (
+          <Image
+            src={app.icon_url}
+            alt={app.name}
+            width={48}
+            height={48}
+            className="rounded-xl object-cover flex-shrink-0"
+            style={{ backgroundColor: '#2a1010' }}
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-xl flex-shrink-0" style={{ backgroundColor: '#2a1010' }} />
+        )}
         <div className="flex-1 min-w-0">
           {/* App name */}
           <div className="flex items-center gap-1.5 mb-1">

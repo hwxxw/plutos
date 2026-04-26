@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { formatKRW } from '@/lib/format';
@@ -159,8 +160,8 @@ function AppCardInner({ app }: { app: AdApp }) {
   return (
     <>
       {app.icon_url ? (
-        <img src={app.icon_url} alt={app.name}
-          className="w-10 h-10 rounded-xl object-cover mb-2"
+        <Image src={app.icon_url} alt={app.name} width={40} height={40}
+          className="rounded-xl object-cover mb-2"
           style={{ backgroundColor: '#1a0a0e' }} />
       ) : (
         <div className="w-10 h-10 rounded-xl mb-2"
