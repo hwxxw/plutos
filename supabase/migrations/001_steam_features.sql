@@ -175,6 +175,51 @@ BEGIN
 END;
 $$;
 
+-- 13. reviews RLS
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY IF NOT EXISTS "reviews_public_read"
+  ON reviews FOR SELECT
+  USING (is_hidden = false);
+
+CREATE POLICY IF NOT EXISTS "reviews_own_insert"
+  ON reviews FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY IF NOT EXISTS "reviews_own_update"
+  ON reviews FOR UPDATE
+  USING (user_id = auth.uid());
+
+-- 14. 앱 평점 재계산 함수
+CREATE OR REPLACE FUNCTION recalc_app_rating(p_app_id UUID)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_avg  NUMERIC;
+  v_cnt  INTEGER;
+BEGIN
+  SELECT COALESCE(AVG(rating), 0), COALESCE(COUNT(*), 0)
+  INTO v_avg, v_cnt
+  FROM reviews
+  WHERE app_id = p_app_id AND is_hidden = false;
+
+  UPDATE apps SET rating_avg = v_avg, rating_count = v_cnt WHERE id = p_app_id;
+END;
+$$;
+
+-- 15. 리뷰 삽입 시 자동 평점 갱신 트리거
+CREATE OR REPLACE FUNCTION trg_recalc_rating_fn()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  PERFORM recalc_app_rating(COALESCE(NEW.app_id, OLD.app_id));
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_recalc_rating ON reviews;
+CREATE TRIGGER trg_recalc_rating
+  AFTER INSERT OR UPDATE OR DELETE ON reviews
+  FOR EACH ROW EXECUTE FUNCTION trg_recalc_rating_fn();
+
 -- ============================================================
 -- 완료. 이제 Vercel에서 API/UI를 배포하세요.
 -- ============================================================

@@ -25,7 +25,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* 계정 정보 */}
-      <div className="card space-y-4">
+      <div className="rounded-2xl p-5 space-y-4" style={{ backgroundColor: '#120a0e', border: '1px solid #2a1515' }}>
         <h2 className="text-sm font-semibold text-white">계정 정보</h2>
         <div className="space-y-3">
           <Row label="이메일" value={user.email ?? '-'} />
@@ -40,7 +40,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* 빠른 링크 */}
-      <div className="card space-y-3">
+      <div className="rounded-2xl p-5 space-y-3" style={{ backgroundColor: '#120a0e', border: '1px solid #2a1515' }}>
         <h2 className="text-sm font-semibold text-white">바로가기</h2>
         <div className="space-y-2">
           {[

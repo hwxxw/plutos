@@ -7,10 +7,7 @@ const TIER_RANK: Record<TierName, number> = { basic: 1, plus: 2, business: 3 };
 
 export async function POST(request: Request) {
   try {
-    const { appId, tier } = await request.json() as {
-      appId: string;
-      tier: TierName;
-    };
+    const { appId, tier } = await request.json() as { appId: string; tier: TierName };
 
     if (!appId || !tier) {
       return NextResponse.json({ error: 'missing_params' }, { status: 400 });
@@ -20,52 +17,34 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-    // 기존 라이선스
-    const { data: currentLicense } = await supabase
-      .from('licenses')
-      .select('*, app_tiers!inner(price_krw)')
-      .eq('user_id', user.id)
-      .eq('app_id', appId)
-      .eq('status', 'active')
-      .maybeSingle();
+    // 기존 라이선스 + 앱 + 신규 티어 병렬 조회
+    const [{ data: currentLicense }, { data: app }, { data: newTier }] = await Promise.all([
+      supabase.from('licenses')
+        .select('id, tier, amount_paid_krw, app_id')
+        .eq('user_id', user.id).eq('app_id', appId).eq('status', 'active')
+        .maybeSingle(),
+      supabase.from('apps_public').select('id, name, slug, icon_url, developer_id').eq('id', appId).maybeSingle(),
+      supabase.from('app_tiers').select('id, price_krw, max_seats')
+        .eq('app_id', appId).eq('tier', tier).eq('is_active', true).maybeSingle(),
+    ]);
 
-    if (!currentLicense) {
-      return NextResponse.json({ error: 'no_existing_license' }, { status: 404 });
-    }
+    if (!currentLicense) return NextResponse.json({ error: 'no_existing_license' }, { status: 404 });
+    if (!app) return NextResponse.json({ error: 'app_not_found' }, { status: 404 });
+    if (!newTier) return NextResponse.json({ error: 'tier_not_available' }, { status: 404 });
 
-    // 티어 격상 검증
     if (TIER_RANK[tier] <= TIER_RANK[currentLicense.tier as TierName]) {
       return NextResponse.json({ error: 'not_an_upgrade' }, { status: 400 });
     }
 
-    // 신규 티어 정보
-    const { data: newTier } = await supabase
-      .from('app_tiers')
-      .select('*')
-      .eq('app_id', appId)
-      .eq('tier', tier)
-      .eq('is_active', true)
-      .maybeSingle();
+    // 현재 티어 가격 별도 조회
+    const { data: currentTierData } = await supabase
+      .from('app_tiers').select('price_krw')
+      .eq('app_id', appId).eq('tier', currentLicense.tier).maybeSingle();
 
-    if (!newTier) {
-      return NextResponse.json({ error: 'tier_not_available' }, { status: 404 });
-    }
-
-    // 앱 + 개발자 정보
-    const { data: app } = await supabase
-      .from('apps_public')
-      .select('*')
-      .eq('id', appId)
-      .maybeSingle();
-    if (!app) return NextResponse.json({ error: 'app_not_found' }, { status: 404 });
-
-    // 차액 계산
-    const currentTierPrice = (currentLicense as any).app_tiers?.price_krw ?? currentLicense.amount_paid_krw;
+    const currentTierPrice = currentTierData?.price_krw ?? currentLicense.amount_paid_krw;
     const priceDiff = newTier.price_krw - currentTierPrice;
 
-    if (priceDiff <= 0) {
-      return NextResponse.json({ error: 'no_upgrade_cost' }, { status: 400 });
-    }
+    if (priceDiff <= 0) return NextResponse.json({ error: 'no_upgrade_cost' }, { status: 400 });
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
     const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
@@ -73,26 +52,19 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'krw',
-            product_data: {
-              name: `${app.name} — ${tierLabel} 업그레이드`,
-              description: `기존 ${currentLicense.tier} 티어에서 ${tier} 티어로 업그레이드`,
-              images: app.icon_url ? [app.icon_url] : undefined,
-              metadata: {
-                type: 'upgrade',
-                app_id: app.id,
-                from_tier: currentLicense.tier,
-                to_tier: tier,
-              },
-            },
-            unit_amount: priceDiff,
+      line_items: [{
+        price_data: {
+          currency: 'krw',
+          product_data: {
+            name: `${app.name} — ${tierLabel} 업그레이드`,
+            description: `${currentLicense.tier} → ${tier} 티어 업그레이드`,
+            images: app.icon_url ? [app.icon_url] : undefined,
+            metadata: { type: 'upgrade', app_id: app.id, from_tier: currentLicense.tier, to_tier: tier },
           },
-          quantity: 1,
+          unit_amount: priceDiff,
         },
-      ],
+        quantity: 1,
+      }],
       customer_email: user.email,
       metadata: {
         type: 'upgrade',
@@ -113,9 +85,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error('[upgrade] error:', err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'server_error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'server_error' }, { status: 500 });
   }
 }

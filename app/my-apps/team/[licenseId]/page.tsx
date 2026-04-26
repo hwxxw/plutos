@@ -5,6 +5,18 @@ import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 
+const C = {
+  card:   '#120a0e',
+  border: '#2a1515',
+  red:    '#cc1a1a',
+  redDim: '#880000',
+  text:   '#e8e8e8',
+  sub:    '#888888',
+  muted:  '#4a3535',
+  cinzel: 'Cinzel, serif' as const,
+  ibm:    "'IBM Plex Sans KR', sans-serif" as const,
+};
+
 interface Seat {
   id: string;
   invited_email: string;
@@ -33,6 +45,7 @@ export default function TeamManagePage() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function loadData() {
     const supabase = createClient();
@@ -41,38 +54,28 @@ export default function TeamManagePage() {
 
     const { data: lic } = await supabase
       .from('licenses')
-      .select(`
-        id, tier, max_seats, app_id,
-        apps!inner(name, icon_url)
-      `)
-      .eq('id', licenseId)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
+      .select('id, tier, max_seats, app_id, apps!inner(name, icon_url)')
+      .eq('id', licenseId).eq('user_id', user.id).eq('status', 'active')
       .maybeSingle();
 
     if (lic) setLicense(lic as any);
 
     const { data: s } = await supabase
-      .from('license_seats')
-      .select('*')
-      .eq('license_id', licenseId)
-      .neq('status', 'removed')
+      .from('license_seats').select('*')
+      .eq('license_id', licenseId).neq('status', 'removed')
       .order('invited_at', { ascending: false });
 
     setSeats((s || []) as Seat[]);
     setLoading(false);
   }
 
-  useEffect(() => {
-    loadData();
-  }, [licenseId]);
+  useEffect(() => { loadData(); }, [licenseId]);
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     setInviteLoading(true);
     setMessage(null);
     setShareUrl(null);
-
     try {
       const res = await fetch('/api/seats', {
         method: 'POST',
@@ -80,7 +83,6 @@ export default function TeamManagePage() {
         body: JSON.stringify({ licenseId, email: inviteEmail }),
       });
       const data = await res.json();
-
       if (!res.ok) {
         const msgs: Record<string, string> = {
           seat_limit_reached: '더 이상 초대할 수 없습니다 (정원 초과).',
@@ -91,7 +93,6 @@ export default function TeamManagePage() {
         };
         throw new Error(msgs[data.error] ?? data.error ?? '초대 실패');
       }
-
       setShareUrl(data.inviteUrl);
       setInviteEmail('');
       setMessage({ type: 'ok', text: '초대 링크가 생성되었습니다. 아래 링크를 팀원에게 전달하세요.' });
@@ -103,98 +104,122 @@ export default function TeamManagePage() {
     }
   }
 
+  function copyLink() {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  }
+
   if (loading) {
     return (
-      <div className="py-16 text-center text-slate-500">
-        <div className="inline-block w-8 h-8 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
+      <div className="py-24 text-center">
+        <div className="inline-block w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
+          style={{ borderColor: C.red, borderTopColor: 'transparent' }} />
       </div>
     );
   }
 
   if (!license) {
-    return <div className="card text-center py-10">라이선스를 찾을 수 없습니다.</div>;
+    return (
+      <div className="max-w-md mx-auto py-16">
+        <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <p className="text-sm" style={{ color: C.sub, fontFamily: C.ibm }}>라이선스를 찾을 수 없습니다.</p>
+        </div>
+      </div>
+    );
   }
 
   if (license.tier !== 'business') {
     return (
-      <div className="card text-center py-10">
-        <h2 className="font-bold">Business 티어 전용</h2>
-        <p className="text-xs text-slate-500 mt-2">
-          팀 공유는 Business 티어에서만 가능합니다.
-        </p>
+      <div className="max-w-md mx-auto py-16">
+        <div className="rounded-2xl p-8 text-center space-y-3" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <h2 className="font-black" style={{ color: C.text, fontFamily: C.cinzel }}>Business 티어 전용</h2>
+          <p className="text-sm" style={{ color: C.sub, fontFamily: C.ibm }}>팀 공유는 Business 티어에서만 가능합니다.</p>
+        </div>
       </div>
     );
   }
 
   const acceptedSeats = seats.filter((s) => s.status === 'accepted').length;
-  const pendingSeats = seats.filter((s) => s.status === 'pending').length;
-  const remaining = license.max_seats - 1 - acceptedSeats - pendingSeats;
-  // -1은 구매자 본인 자리
+  const pendingSeats  = seats.filter((s) => s.status === 'pending').length;
+  const remaining     = license.max_seats - 1 - acceptedSeats - pendingSeats;
 
   return (
-    <div className="space-y-5 max-w-lg mx-auto">
-      <Link href="/my-apps" className="text-xs text-slate-500">← 내 앱</Link>
+    <div className="space-y-5 max-w-lg mx-auto py-6">
+      <Link href="/my-apps" className="flex items-center gap-1 text-xs" style={{ color: C.muted }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+        내 앱
+      </Link>
 
-      <section className="card">
+      {/* 앱 헤더 */}
+      <section className="rounded-2xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
         <div className="flex items-center gap-3">
-          <img src={license.apps.icon_url} alt="" className="w-12 h-12 rounded-xl" />
+          {license.apps.icon_url
+            ? <img src={license.apps.icon_url} alt="" className="w-12 h-12 rounded-xl object-cover" style={{ backgroundColor: '#1a0a0e' }} />
+            : <div className="w-12 h-12 rounded-xl" style={{ backgroundColor: '#1a0404', border: '1px solid #330000' }} />
+          }
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold truncate">{license.apps.name}</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Business 팀 관리</p>
+            <h1 className="font-black truncate" style={{ color: C.text, fontFamily: C.cinzel }}>{license.apps.name}</h1>
+            <p className="text-xs mt-0.5" style={{ color: C.muted, fontFamily: C.ibm }}>Business 팀 관리</p>
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <div className="bg-slate-50 rounded-lg p-2">
-            <div className="text-[10px] text-slate-500">총 자리</div>
-            <div className="font-bold">{license.max_seats}명</div>
-          </div>
-          <div className="bg-green-50 rounded-lg p-2">
-            <div className="text-[10px] text-green-600">참여중</div>
-            <div className="font-bold text-green-700">{acceptedSeats + 1}명</div>
-          </div>
-          <div className="bg-amber-50 rounded-lg p-2">
-            <div className="text-[10px] text-amber-600">대기</div>
-            <div className="font-bold text-amber-700">{pendingSeats}명</div>
-          </div>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {[
+            { label: '총 자리', value: `${license.max_seats}명`, bg: '#0d0a10', color: C.text },
+            { label: '참여중', value: `${acceptedSeats + 1}명`, bg: '#0d1a0d', color: '#4ade80' },
+            { label: '대기', value: `${pendingSeats}명`, bg: '#1a1400', color: '#ccaa00' },
+          ].map((s) => (
+            <div key={s.label} className="rounded-lg p-2 text-center"
+              style={{ backgroundColor: s.bg, border: `1px solid ${C.border}` }}>
+              <div className="text-[9px] uppercase tracking-widest mb-0.5" style={{ color: C.muted, fontFamily: C.cinzel }}>{s.label}</div>
+              <div className="font-black text-base" style={{ color: s.color, fontFamily: C.cinzel }}>{s.value}</div>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* 초대 폼 */}
       {remaining > 0 && (
-        <section className="card">
-          <h2 className="font-semibold text-sm mb-3">팀원 초대 ({remaining}자리 남음)</h2>
+        <section className="rounded-2xl p-5 space-y-3" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+          <h2 className="font-bold text-sm" style={{ color: C.text, fontFamily: C.cinzel }}>팀원 초대 ({remaining}자리 남음)</h2>
           <form onSubmit={handleInvite} className="flex gap-2">
             <input
-              type="email"
-              required
-              value={inviteEmail}
+              type="email" required value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               placeholder="team@example.com"
-              className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
+              style={{ backgroundColor: '#0d0a10', border: '1px solid #3a1515', color: C.text, fontFamily: C.ibm }}
             />
-            <button
-              type="submit"
-              disabled={inviteLoading}
-              className="btn-primary text-sm whitespace-nowrap"
-            >
+            <button type="submit" disabled={inviteLoading}
+              className="px-4 py-2 rounded-lg text-sm font-bold flex-shrink-0"
+              style={{ backgroundColor: C.red, color: '#fff', fontFamily: C.cinzel }}>
               {inviteLoading ? '...' : '초대'}
             </button>
           </form>
 
           {message && (
-            <div
-              className={`mt-3 text-xs p-2 rounded ${
-                message.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-              }`}
-            >
+            <div className="text-xs p-3 rounded-lg"
+              style={{
+                backgroundColor: message.type === 'ok' ? '#0d1a0d' : '#1a0404',
+                color: message.type === 'ok' ? '#4ade80' : C.red,
+                border: `1px solid ${message.type === 'ok' ? '#1a4a1a' : '#330000'}`,
+                fontFamily: C.ibm,
+              }}>
               {message.text}
             </div>
           )}
 
           {shareUrl && (
-            <div className="mt-2 bg-slate-50 rounded p-2 text-[11px] break-all font-mono">
-              {shareUrl}
+            <div className="rounded-lg p-3 flex items-center gap-2"
+              style={{ backgroundColor: '#0d0a10', border: `1px solid ${C.border}` }}>
+              <span className="text-[11px] break-all flex-1 font-mono" style={{ color: C.muted }}>{shareUrl}</span>
+              <button onClick={copyLink}
+                className="text-[11px] font-bold px-2 py-1 rounded flex-shrink-0"
+                style={{ backgroundColor: copied ? '#0d1a0d' : '#1a0404', color: copied ? '#4ade80' : C.red, border: `1px solid ${copied ? '#1a4a1a' : '#330000'}` }}>
+                {copied ? '복사됨' : '복사'}
+              </button>
             </div>
           )}
         </section>
@@ -202,26 +227,27 @@ export default function TeamManagePage() {
 
       {/* 참여자 목록 */}
       <section>
-        <h2 className="font-semibold text-sm mb-3">참여자</h2>
-        <div className="card divide-y divide-slate-100">
-          <div className="py-2 first:pt-0 flex justify-between items-center text-sm">
-            <span>
-              <strong>본인 (구매자)</strong>
-            </span>
-            <span className="text-[10px] bg-brand-50 text-brand-700 px-1.5 py-0.5 rounded font-bold">
+        <h2 className="font-bold text-sm mb-3" style={{ color: C.text, fontFamily: C.cinzel }}>참여자</h2>
+        <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${C.border}` }}>
+          {/* 본인 (구매자) */}
+          <div className="flex justify-between items-center px-4 py-3"
+            style={{ backgroundColor: C.card, borderBottom: seats.length > 0 ? '1px solid #1a1018' : 'none' }}>
+            <span className="text-sm font-semibold" style={{ color: C.text, fontFamily: C.cinzel }}>본인 (구매자)</span>
+            <span className="text-[10px] font-black px-2 py-0.5 rounded"
+              style={{ backgroundColor: '#0d0a20', color: '#7788ff', border: '1px solid #222244' }}>
               Owner
             </span>
           </div>
-          {seats.map((s) => (
-            <div key={s.id} className="py-2 last:pb-0 flex justify-between items-center text-sm">
-              <span className="truncate">{s.invited_email}</span>
-              <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                  s.status === 'accepted'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-amber-100 text-amber-700'
-                }`}
-              >
+          {seats.map((s, i) => (
+            <div key={s.id} className="flex justify-between items-center px-4 py-3"
+              style={{ backgroundColor: C.card, borderBottom: i < seats.length - 1 ? '1px solid #1a1018' : 'none' }}>
+              <span className="text-sm truncate" style={{ color: C.sub, fontFamily: C.ibm }}>{s.invited_email}</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded flex-shrink-0 ml-2"
+                style={{
+                  backgroundColor: s.status === 'accepted' ? '#0d1a0d' : '#1a1400',
+                  color: s.status === 'accepted' ? '#4ade80' : '#ccaa00',
+                  border: `1px solid ${s.status === 'accepted' ? '#1a4a1a' : '#332800'}`,
+                }}>
                 {s.status === 'accepted' ? '참여중' : '수락 대기'}
               </span>
             </div>

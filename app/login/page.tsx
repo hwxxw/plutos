@@ -63,9 +63,14 @@ export default function LoginPage() {
         </div>
 
         {sent ? (
-          <div className="card text-center py-8 space-y-3">
-            <div className="w-12 h-12 rounded-full bg-brand-900/40 border border-brand-700 flex items-center justify-center mx-auto text-2xl">
-              ✉
+          <div className="rounded-2xl text-center py-8 space-y-3 px-6"
+            style={{ backgroundColor: '#120a0e', border: '1px solid #2a1515' }}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
+              style={{ backgroundColor: '#1a0404', border: '1px solid #330000' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#cc1a1a" strokeWidth={1.5} strokeLinecap="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
             </div>
             <div className="font-semibold text-white">이메일을 확인하세요</div>
             <div className="text-xs text-zinc-400 leading-relaxed">
@@ -80,7 +85,8 @@ export default function LoginPage() {
             </button>
           </div>
         ) : (
-          <div className="card space-y-3">
+          <div className="rounded-2xl p-5 space-y-3"
+            style={{ backgroundColor: '#120a0e', border: '1px solid #2a1515' }}>
 
             {/* Google */}
             <OAuthBtn
@@ -146,7 +152,8 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500 transition-colors duration-150"
+                className="w-full rounded-lg px-3 py-2.5 text-sm text-white outline-none transition-colors duration-150"
+                style={{ backgroundColor: '#0d0a10', border: '1px solid #3a1515' }}
               />
               <MotionBtn
                 type="submit"
@@ -163,7 +170,7 @@ export default function LoginPage() {
             </form>
 
             {message?.type === 'err' && (
-              <div className="text-xs p-2.5 rounded-lg bg-brand-900/30 border border-brand-800 text-brand-400">
+              <div className="text-xs p-2.5 rounded-lg" style={{ backgroundColor: '#1a0404', border: '1px solid #330000', color: '#cc1a1a' }}>
                 {message.text}
               </div>
             )}
