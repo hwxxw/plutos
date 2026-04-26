@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { TIER_INFO, type TierName } from '@/lib/supabase/types';
 
 const C = {
@@ -140,7 +141,7 @@ export default function MyAppsClient({
                 <div className="flex items-center gap-3 p-4">
                   <Link href={`/install/${item.app.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                     {item.app.icon_url
-                      ? <img src={item.app.icon_url} alt={item.app.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" style={{ backgroundColor: '#1a0a0e' }} />
+                      ? <Image src={item.app.icon_url} alt={item.app.name} width={48} height={48} className="rounded-xl object-cover flex-shrink-0" style={{ backgroundColor: '#1a0a0e' }} />
                       : <div className="w-12 h-12 rounded-xl flex-shrink-0" style={{ backgroundColor: '#1a0404', border: '1px solid #330000' }} />
                     }
                     <div className="flex-1 min-w-0">

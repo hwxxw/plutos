@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { TierSelector } from '@/components/TierSelector';
 import { ReviewForm } from '@/components/ReviewForm';
 import type { PublicApp, AppTier, TierName } from '@/lib/supabase/types';
@@ -122,7 +123,7 @@ export default async function AppDetailPage({ params }: { params: { slug: string
       <section className="rounded-2xl p-5" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
         <div className="flex items-start gap-4">
           {app.icon_url
-            ? <img src={app.icon_url} alt={app.name} className="w-20 h-20 rounded-2xl object-cover flex-shrink-0" style={{ backgroundColor: '#1a0a0e' }} />
+            ? <Image src={app.icon_url} alt={app.name} width={80} height={80} className="rounded-2xl object-cover flex-shrink-0" style={{ backgroundColor: '#1a0a0e' }} priority />
             : <div className="w-20 h-20 rounded-2xl flex-shrink-0" style={{ backgroundColor: '#1a0404', border: '1px solid #330000' }} />
           }
           <div className="flex-1 min-w-0">
@@ -206,9 +207,9 @@ export default async function AppDetailPage({ params }: { params: { slug: string
           <div className="flex gap-3 overflow-x-auto pb-2">
             {screenshots.map((url, i) => (
               <img key={i} src={url} alt={`screenshot ${i + 1}`}
-                className="h-56 rounded-xl flex-shrink-0"
+                className="h-56 rounded-xl flex-shrink-0 object-cover"
                 style={{ border: `1px solid ${C.border}` }}
-                loading="lazy" />
+                loading="lazy" decoding="async" />
             ))}
           </div>
         </section>

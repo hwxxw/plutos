@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { formatKRW } from '@/lib/format';
 import { TIER_INFO, type TierName } from '@/lib/supabase/types';
 
@@ -49,7 +50,7 @@ export default async function DeveloperAppDetail({ params }: { params: { id: str
       {/* 앱 헤더 */}
       <section className="rounded-2xl p-5 flex items-center gap-4" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
         {app.icon_url
-          ? <img src={app.icon_url} alt={app.name} className="w-16 h-16 rounded-2xl object-cover" style={{ backgroundColor: '#1a0a0e' }} />
+          ? <Image src={app.icon_url} alt={app.name} width={64} height={64} className="rounded-2xl object-cover" style={{ backgroundColor: '#1a0a0e' }} />
           : <div className="w-16 h-16 rounded-2xl" style={{ backgroundColor: '#1a0404', border: '1px solid #330000' }} />
         }
         <div className="flex-1 min-w-0">

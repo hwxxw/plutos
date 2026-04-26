@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { TIER_INFO, type TierName } from '@/lib/supabase/types';
 import { collectFingerprint, sendFingerprint } from '@/lib/fingerprint';
@@ -208,7 +209,7 @@ export default function InstallPage() {
       {/* 앱 헤더 */}
       <section className="rounded-2xl p-6 text-center" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
         {app?.icon_url
-          ? <img src={app.icon_url} alt={app.name} className="w-20 h-20 mx-auto rounded-2xl mb-3 object-cover" style={{ backgroundColor: '#1a0a0e' }} />
+          ? <Image src={app.icon_url} alt={app.name} width={80} height={80} className="mx-auto rounded-2xl mb-3 object-cover" style={{ backgroundColor: '#1a0a0e' }} />
           : <div className="w-20 h-20 mx-auto rounded-2xl mb-3" style={{ backgroundColor: '#1a0404', border: '1px solid #330000' }} />
         }
         <h1 className="text-xl font-black" style={{ color: C.text, fontFamily: C.cinzel }}>{app?.name}</h1>

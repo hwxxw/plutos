@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { formatKRW } from '@/lib/format';
 
 const C = {
@@ -175,7 +176,7 @@ export default async function DeveloperDashboard({
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = C.border; }}
               >
                 {app.icon_url
-                  ? <img src={app.icon_url} alt={app.name} className="w-10 h-10 rounded-lg object-cover" style={{ backgroundColor: '#1a0a0e' }} />
+                  ? <Image src={app.icon_url} alt={app.name} width={40} height={40} className="rounded-lg object-cover" style={{ backgroundColor: '#1a0a0e' }} />
                   : <div className="w-10 h-10 rounded-lg" style={{ backgroundColor: '#1a0404', border: '1px solid #330000' }} />
                 }
                 <div className="flex-1 min-w-0">
