@@ -35,7 +35,6 @@ interface ReviewRow {
   reviewer_tier: string | null;
   helpful_count: number;
   created_at: string;
-  users: { display_name: string | null } | null;
 }
 
 function StarBar({ count, total, star }: { count: number; total: number; star: number }) {
@@ -84,7 +83,7 @@ export default async function AppDetailPage({ params }: { params: { slug: string
       ? supabase.from('users').select('point_balance, membership_tier').eq('id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from('reviews').select(
-      'id, rating, title, content, reviewer_tier, helpful_count, created_at, users(display_name)'
+      'id, rating, title, content, reviewer_tier, helpful_count, created_at'
     ).eq('app_id', app.id).eq('is_hidden', false).order('created_at', { ascending: false }).limit(30),
     user
       ? supabase.from('reviews').select('id').eq('user_id', user.id).eq('app_id', app.id).maybeSingle()
@@ -310,7 +309,7 @@ export default async function AppDetailPage({ params }: { params: { slug: string
                     <div className="flex items-center gap-2">
                       <StarDisplay rating={review.rating} size={13} />
                       <span className="text-xs font-semibold" style={{ color: C.sub, fontFamily: C.ibm }}>
-                        {(review.users as any)?.display_name ?? '익명'}
+                        구매자
                       </span>
                       {badge && (
                         <span className="text-[9px] font-black px-1.5 py-0.5 rounded"
