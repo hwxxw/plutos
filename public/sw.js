@@ -10,6 +10,9 @@ const ALLOWED_ORIGINS = [
   'https://plutos-six-hwxxws-projects.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001',
+  'http://localhost:3002',
+  'http://localhost:3003',
+  'http://localhost:3004',
 ];
 
 const CACHE_NAME = 'plutos-shell-v1';
