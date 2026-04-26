@@ -10,8 +10,10 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },
       { protocol: 'https', hostname: '**.supabase.in' },
+      // 개발자가 외부 URL 아이콘 제출 가능 — 모든 HTTPS 허용
+      { protocol: 'https', hostname: '**' },
     ],
-    minimumCacheTTL: 3600, // 이미지 캐시 1시간
+    minimumCacheTTL: 3600,
     formats: ['image/avif', 'image/webp'],
   },
   async headers() {
