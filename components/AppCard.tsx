@@ -79,7 +79,7 @@ export function AppCard({ app }: { app: PublicApp }) {
           <div className="flex items-center gap-2 text-xs">
             {app.rating_count > 0 ? (
               <span style={{ color: '#777777' }}>
-                ★ {app.rating_avg.toFixed(1)}
+                ★ {Number(app.rating_avg).toFixed(1)}
                 <span style={{ color: '#555555' }}> ({app.rating_count})</span>
               </span>
             ) : (
