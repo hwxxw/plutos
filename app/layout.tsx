@@ -1,9 +1,24 @@
 import type { Metadata, Viewport } from 'next';
+import { Cinzel, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { ClientProviders } from '@/components/ClientProviders';
 import Link from 'next/link';
 import { LogoImage } from '@/components/LogoImage';
+
+const cinzel = Cinzel({
+  subsets: ['latin'],
+  weight: ['400', '600', '700', '900'],
+  variable: '--font-cinzel',
+  display: 'swap',
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-space',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'PLUTOS — AI-Powered Web Tool Market',
@@ -21,7 +36,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={`${cinzel.variable} ${spaceGrotesk.variable}`}>
+      <head>
+        {/* IBM Plex Sans KR (Korean) — preconnect to Google Fonts CDN */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      </head>
       <body className="min-h-screen flex flex-col" style={{ backgroundColor: '#0d0d14' }}>
         <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});})}` }} />
         <ClientProviders>
